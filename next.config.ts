@@ -6,7 +6,13 @@ const nextConfig: NextConfig = {
     // appDir: true,  // App Routerを使っている場合、このオプションが必要です
   },
   images: {
-    domains: ["i.scdn.co"], // ← Spotify画像用ドメインを追加
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "i.scdn.co",
+        pathname: "/**",
+      },
+    ],
   },
 };
 
