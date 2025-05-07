@@ -80,8 +80,12 @@ export default function Home() {
       <div className="min-h-screen bg-gray-100 p-4">
         <header className="mb-8">
           <h1 className="text-2xl font-bold text-center mb-4">
-            Simple Spotify Player
+            Spotify Player
           </h1>
+          <p className="text-center mb-5">
+            <span className="text-red-700">※</span>
+            Spotifyをアクティブの状態にしてください
+          </p>
           <SearchBar onSearch={handleSearch} /> {/* 検索バーコンポーネント */}
         </header>
 
