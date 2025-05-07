@@ -6,6 +6,7 @@ interface PlayerProps {
   track: Track;
 }
 
+// Playerコンポーネントのプロパティを定義
 const Player: React.FC<PlayerProps> = ({ track }) => {
   const [isPlaying, setIsPlaying] = useState(false); // 再生状態の管理 (ダミー)
 
@@ -39,8 +40,8 @@ const Player: React.FC<PlayerProps> = ({ track }) => {
       <Image
         src={track.album.images[0].url}
         alt={`${track.album.name} cover`}
-        width={192} // Adjust width as needed
-        height={192} // Adjust height as needed
+        width={192}
+        height={192}
         className="object-cover rounded-md mb-4"
       />
 
@@ -52,18 +53,13 @@ const Player: React.FC<PlayerProps> = ({ track }) => {
         </div>
       </div>
 
-      {/* 簡単な再生/一時停止ボタン (機能は未実装) */}
+      {/* 簡単な再生/一時停止ボタン */}
       <button
         onClick={handlePlayPause}
         className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-full"
       >
         {isPlaying ? "一時停止 " : "再生"}
       </button>
-
-      {/* 再生バーなどの要素もここに追加できます (機能は未実装) */}
-      {/* <div className="w-full h-2 bg-gray-300 rounded-full mt-4">
-          <div className="w-1/3 h-2 bg-green-500 rounded-full"></div>
-      </div> */}
     </div>
   );
 };
