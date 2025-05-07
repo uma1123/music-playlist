@@ -2,7 +2,6 @@ export interface Artist {
   id: string;
   name: string;
   uri: string;
-  // 他にも色々プロパティがあります
 }
 
 export interface Album {
@@ -14,7 +13,6 @@ export interface Album {
     width: number;
   }[];
   uri: string;
-  // 他にも色々プロパティがあります
 }
 
 export interface Track {
@@ -23,7 +21,7 @@ export interface Track {
   artists: Artist[];
   album: Album;
   uri: string; // 再生に必要なURI
-  // 他にも色々プロパティがあります (duration_ms, explicit, etc.)
+  // Additional properties: duration_ms, explicit, etc.
 }
 
 export interface SearchResult {
