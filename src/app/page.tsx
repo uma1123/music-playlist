@@ -2,14 +2,21 @@
 
 import { useState } from "react";
 import { Track } from "../types/spotify";
-import useSpotifyAuth from "../hooks/useSpotifyAuth"; // 修正したフックをインポート
+import useSpotifyAuth from "../hooks/useSpotifyAuth";
 import SearchBar from "../components/SearchBar";
 import TrackList from "../components/TrackList";
 import Player from "../components/Player";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
 
 export default function Home() {
   // useSpotifyAuth から isAuthenticated, login, isLoading を取得
-  const { isAuthenticated, login, isLoading } = useSpotifyAuth();
+  const { isAuthenticated, login, isLoading, accessToken } = useSpotifyAuth();
   const [searchResults, setSearchResults] = useState<Track[]>([]);
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [searchLoading, setSearchLoading] = useState(false); // 検索中のローディング状態
@@ -43,6 +50,7 @@ export default function Home() {
 
   // 曲選択時のハンドラ
   const handleTrackSelect = (track: Track) => {
+    console.log("Selected track:", track);
     setSelectedTrack(track);
     setSearchResults([]); // 検索結果表示を閉じる
   };
@@ -53,7 +61,7 @@ export default function Home() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 text-xl font-semibold">
-        Loading authentication status...
+        処理中...
       </div>
     );
   }
@@ -61,18 +69,17 @@ export default function Home() {
   // isLoading が false になり、isAuthenticated が false の場合はログイン画面を表示
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Music Player</h1>
-          <p className="mb-4">Spotifyアカウントでログインしてください</p>
-          <button
-            onClick={login} // ログイン関数を呼び出し
-            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Spotifyでログイン
-          </button>
-        </div>
-      </div>
+      <Card className="w-[400px] h-[400px] flex justify-center items-center mx-auto mt-20">
+        <CardHeader className="text-center">
+          <CardTitle className="font-bold">Music Playlist</CardTitle>
+          <CardDescription>
+            Spotifyアカウントにログインしてください
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <button onClick={login}>ログイン</button>
+        </CardContent>
+      </Card>
     );
   } else {
     // isLoading が false になり、isAuthenticated が true の場合は認証済み画面を表示
@@ -106,11 +113,17 @@ export default function Home() {
             </div>
           )}
           {/* 選択された曲情報の表示 */}
-          {!searchLoading && !error && selectedTrack && (
+          {selectedTrack && accessToken ? (
             <div className="mb-8 flex flex-col items-center">
               <h2 className="text-xl font-semibold mb-4">選択されたトラック</h2>
-              <Player track={selectedTrack} /> {/* プレイヤーコンポーネント */}
+              <Player track={selectedTrack} accessToken={accessToken} />
             </div>
+          ) : (
+            selectedTrack && (
+              <div className="text-gray-500 text-sm">
+                アクセストークンの取得中...
+              </div>
+            )
           )}
           {/* 初期メッセージまたは検索結果/選択曲がない場合 */}
           {!searchLoading &&
