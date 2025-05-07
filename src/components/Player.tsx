@@ -1,39 +1,66 @@
-import { Track } from "../types/spotify";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
+import { Track } from "../types/spotify";
+import useSpotifyPlayer from "../hooks/useSpotifyPlayer";
 
 interface PlayerProps {
   track: Track;
+  accessToken: string;
 }
 
-// Playerコンポーネントのプロパティを定義
-const Player: React.FC<PlayerProps> = ({ track }) => {
-  const [isPlaying, setIsPlaying] = useState(false); // 再生状態の管理 (ダミー)
+const Player: React.FC<PlayerProps> = ({ track, accessToken }) => {
+  const { player, isReady, deviceId } = useSpotifyPlayer(accessToken);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const handlePlayPause = async () => {
+    if (!player || !isReady) return;
+
     try {
-      const endpoint = isPlaying ? "/api/player/pause" : "/api/player/play";
-
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ trackUri: track.uri }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        console.error("Error toggling playback:", errorData);
-        return;
+      if (isPlaying) {
+        await player.pause();
+      } else {
+        await player.resume();
       }
-
       setIsPlaying(!isPlaying);
-      console.log(isPlaying ? "Paused" : "Playing");
     } catch (err) {
-      console.error("Error toggling playback:", err);
+      console.error("Error toggling playback", err);
     }
   };
+
+  useEffect(() => {
+    if (player && isReady && track) {
+      (async () => {
+        try {
+          await fetch("https://api.spotify.com/v1/me/player", {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              device_ids: [deviceId],
+              play: false,
+            }),
+          });
+
+          await fetch("https://api.spotify.com/v1/me/player/play", {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              uris: [track.uri],
+              device_id: deviceId,
+            }),
+          });
+          setIsPlaying(true);
+        } catch (err) {
+          console.error("Error playing track", err);
+        }
+      })();
+    }
+  }, [player, isReady, track, accessToken, deviceId]);
 
   return (
     <div className="bg-white rounded-md shadow-md p-4 flex flex-col items-center w-full max-w-md">
@@ -44,7 +71,6 @@ const Player: React.FC<PlayerProps> = ({ track }) => {
         height={192}
         className="object-cover rounded-md mb-4"
       />
-
       <div className="text-center mb-4">
         <div className="font-bold text-lg">{track.name}</div>
         <div className="text-sm text-gray-600">
@@ -53,12 +79,11 @@ const Player: React.FC<PlayerProps> = ({ track }) => {
         </div>
       </div>
 
-      {/* 簡単な再生/一時停止ボタン */}
       <button
         onClick={handlePlayPause}
         className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-full"
       >
-        {isPlaying ? "一時停止 " : "再生"}
+        {isPlaying ? "一時停止" : "再生"}
       </button>
     </div>
   );
