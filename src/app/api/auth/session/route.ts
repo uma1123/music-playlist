@@ -1,13 +1,23 @@
-// app/api/auth/session/route.ts
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { cookies } from "next/headers"; // Next.js 13以降でサーバーサイド/APIルートでクッキーを扱う
 
-export function GET(req: NextRequest) {
-  const accessToken = req.cookies.get("access_token");
+// GETメソッドでアクセスされたときのハンドラ
+export async function GET() {
+  // cookies() 関数を使ってリクエストからクッキーを読み取り
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get("access_token")?.value; // Access Token クッキーの値を取得
 
   if (accessToken) {
-    return NextResponse.json({ authenticated: true });
+    // Access Token が存在する場合、認証済みとしてトークンをクライアントに返す
+    return NextResponse.json({
+      authenticated: true,
+      accessToken: accessToken, // Access Token を含める
+    });
   } else {
-    return NextResponse.json({ authenticated: false }, { status: 401 });
+    // Access Token が存在しない場合、非認証状態として返す
+    return NextResponse.json({
+      authenticated: false,
+      accessToken: null, // トークンは返さない
+    });
   }
 }
