@@ -6,13 +6,8 @@ import useSpotifyAuth from "../hooks/useSpotifyAuth";
 import SearchBar from "../components/SearchBar";
 import TrackList from "../components/TrackList";
 import Player from "../components/Player";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ImSpotify } from "react-icons/im";
 
 export default function Home() {
   // useSpotifyAuth から isAuthenticated, login, isLoading を取得
@@ -69,17 +64,32 @@ export default function Home() {
   // isLoading が false になり、isAuthenticated が false の場合はログイン画面を表示
   if (!isAuthenticated) {
     return (
-      <Card className="w-[400px] h-[400px] flex justify-center items-center mx-auto mt-20">
-        <CardHeader className="text-center">
-          <CardTitle className="font-bold">Music Playlist</CardTitle>
-          <CardDescription>
-            Spotifyアカウントにログインしてください
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <button onClick={login}>ログイン</button>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col min-h-screen bg-black text-white">
+        <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
+          <div className="w-full max-w-md space-y-8">
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-purple-600 to-pink-500 mb-6">
+                <ImSpotify className="w-8 h-8" />
+              </div>
+              <h1 className="text-3xl font-bold tracking-tight">
+                Music Playlist with Spotify
+              </h1>
+              <p className="mt-2 text-sm text-zinc-400">
+                Spotifyアカウントでログインしてください
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <Button
+                onClick={login}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white"
+              >
+                ログイン
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   } else {
     // isLoading が false になり、isAuthenticated が true の場合は認証済み画面を表示
