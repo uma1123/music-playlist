@@ -7,7 +7,6 @@ const redirect_uri = process.env.SPOTIFY_REDIRECT_URI;
 
 const scope =
   "streaming user-read-playback-state user-modify-playback-state user-read-email user-read-private";
-
 export async function GET() {
   if (!client_id || !redirect_uri) {
     return NextResponse.json(
