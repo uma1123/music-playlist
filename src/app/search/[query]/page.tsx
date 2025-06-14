@@ -3,10 +3,12 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Track, SearchResult } from "../../../types/spotify";
 import TrackList from "../../../components/TrackList";
+import SearchBar from "@/components/SearchBar";
 //import useSpotifyAuth from "../../../hooks/useSpotifyAuth";
 
 export default function SearchResultPage() {
-  const { query } = useParams<{ query: string }>();
+  const params = useParams<{ query: string }>();
+  const query = params?.query ?? "";
   //const { accessToken } = useSpotifyAuth();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(false);
@@ -30,6 +32,7 @@ export default function SearchResultPage() {
 
   return (
     <div className="container mx-auto p-8">
+      <SearchBar />
       <h1 className="text-2xl font-bold mb-6">「{query}」の検索結果</h1>
       {loading && <div>検索中...</div>}
       {error && <div className="text-red-500">{error}</div>}
