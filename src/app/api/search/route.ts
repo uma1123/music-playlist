@@ -1,19 +1,15 @@
-// src/app/api/search/route.ts
+//app/api/search/route.ts
 import { NextResponse, NextRequest } from "next/server";
-import { cookies } from "next/headers"; // Next.js 13以降でサーバーサイド/APIルートでクッキーを扱う
-import { SearchResult } from "../../../types/spotify"; // パスは適宜調整
+import { cookies } from "next/headers";
+import { SearchResult } from "../../../types/spotify";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q");
-
-  // cookies() 関数を使ってリクエストからクッキーを読み取り
   const cookieStore = await cookies();
-  const access_token = cookieStore.get("access_token")?.value; // クッキーが存在すればその値、なければ undefined
 
-  if (!access_token) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  let access_token = cookieStore.get("access_token")?.value;
+  const refresh_token = cookieStore.get("refresh_token")?.value;
 
   if (!query) {
     return NextResponse.json(
@@ -22,43 +18,78 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  try {
-    const fetch = (await import("node-fetch")).default;
+  if (!access_token) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
 
-    const spotifyRes = await fetch(
-      `https://api.spotify.com/v1/search?q=$${encodeURIComponent(
+  const fetchFromSpotify = async (token: string) => {
+    const fetch = (await import("node-fetch")).default;
+    return fetch(
+      `https://api.spotify.com/v1/search?q=${encodeURIComponent(
         query
       )}&type=track&limit=10`,
       {
         headers: {
-          Authorization: `Bearer ${access_token}`,
+          Authorization: `Bearer ${token}`,
         },
       }
     );
+  };
 
-    if (!spotifyRes.ok) {
-      const errorBody = await spotifyRes.json();
-      console.error("Spotify API error:", spotifyRes.status, errorBody);
-      if (spotifyRes.status === 401) {
-        return NextResponse.json(
-          { error: "Spotify token expired or invalid" },
-          { status: 401 }
-        );
-      }
+  let spotifyRes = await fetchFromSpotify(access_token);
+
+  // トークンが無効だった場合はリフレッシュ
+  if (spotifyRes.status === 401 && refresh_token) {
+    // トークンを更新
+    const tokenRes = await fetch("https://accounts.spotify.com/api/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization:
+          "Basic " +
+          Buffer.from(
+            process.env.SPOTIFY_CLIENT_ID +
+              ":" +
+              process.env.SPOTIFY_CLIENT_SECRET
+          ).toString("base64"),
+      },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        refresh_token,
+      }),
+    });
+
+    if (!tokenRes.ok) {
       return NextResponse.json(
-        { error: "Error fetching from Spotify API" },
-        { status: spotifyRes.status }
+        { error: "Failed to refresh access token" },
+        { status: 401 }
       );
     }
 
-    const data = (await spotifyRes.json()) as SearchResult;
+    const tokenBody = await tokenRes.json();
+    access_token = tokenBody.access_token;
 
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error("Server error during search:", error);
+    // クッキーを更新
+    const response = NextResponse.next();
+    response.cookies.set("access_token", access_token ?? "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    });
+
+    spotifyRes = await fetchFromSpotify(access_token!); // 再リクエスト
+  }
+
+  if (!spotifyRes.ok) {
+    const errorBody = await spotifyRes.json();
+    console.error("Spotify API error:", spotifyRes.status, errorBody);
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+      { error: "Spotify API error", detail: errorBody },
+      { status: spotifyRes.status }
     );
   }
+
+  const data = (await spotifyRes.json()) as SearchResult;
+  return NextResponse.json(data);
 }
