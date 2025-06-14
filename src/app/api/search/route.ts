@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q");
   const cookieStore = await cookies();
+  const offset = Number(searchParams.get("offset") || "0");
 
   let access_token = cookieStore.get("access_token")?.value;
   const refresh_token = cookieStore.get("refresh_token")?.value;
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
     return fetch(
       `https://api.spotify.com/v1/search?q=${encodeURIComponent(
         query
-      )}&type=track&limit=12`,
+      )}&type=track&limit=12&offset=${offset}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
