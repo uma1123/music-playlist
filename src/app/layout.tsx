@@ -1,6 +1,9 @@
+// ✅ 修正後の RootLayout.tsx（scriptタグ削除済み）
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Providers from "./providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,17 +27,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-      <head>
-        <script
-          src="https://sdk.scdn.co/spotify-player.js"
-          async
-          defer
-        ></script>
-      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
