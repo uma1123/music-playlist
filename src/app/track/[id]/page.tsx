@@ -6,7 +6,8 @@ import Player from "../../../components/Player";
 import useSpotifyAuth from "../../../hooks/useSpotifyAuth";
 
 export default function TrackDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
+  const id = params?.id;
   const { accessToken } = useSpotifyAuth();
   const [track, setTrack] = useState<Track | null>(null);
 
