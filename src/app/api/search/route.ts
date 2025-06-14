@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     return fetch(
       `https://api.spotify.com/v1/search?q=${encodeURIComponent(
         query
-      )}&type=track&limit=10`,
+      )}&type=track&limit=12`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
