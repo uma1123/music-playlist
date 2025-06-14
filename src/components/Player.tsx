@@ -1,7 +1,8 @@
+// components/Player.tsx
 import { useEffect, useState } from "react";
-import Image from "next/image";
+import { useSpotifyPlayerContext } from "../context/SpotifyPlayerProvider";
 import { Track } from "../types/spotify";
-import useSpotifyPlayer from "../hooks/useSpotifyPlayer";
+import Image from "next/image";
 
 interface PlayerProps {
   track: Track;
@@ -9,41 +10,36 @@ interface PlayerProps {
 }
 
 const Player: React.FC<PlayerProps> = ({ track, accessToken }) => {
-  const { player, isReady, deviceId } = useSpotifyPlayer(accessToken);
+  const { player, deviceId, isReady } = useSpotifyPlayerContext();
   const [isPlaying, setIsPlaying] = useState(false);
 
   const handlePlayPause = async () => {
-    if (!player || !isReady) return;
+    if (!player) return;
 
     try {
-      if (isPlaying) {
-        await player.pause();
-      } else {
+      const state = await player.getCurrentState();
+      if (!state) return;
+
+      if (state.paused) {
         await player.resume();
+        setIsPlaying(true);
+      } else {
+        await player.pause();
+        setIsPlaying(false);
       }
-      setIsPlaying(!isPlaying);
     } catch (err) {
-      console.error("Error toggling playback", err);
+      console.error("play/pause error", err);
     }
   };
 
   useEffect(() => {
-    if (player && isReady && track) {
-      (async () => {
-        try {
-          await fetch("https://api.spotify.com/v1/me/player", {
-            method: "PUT",
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              device_ids: [deviceId],
-              play: false,
-            }),
-          });
+    if (!deviceId || !isReady) return;
 
-          await fetch("https://api.spotify.com/v1/me/player/play", {
+    const play = async () => {
+      try {
+        await fetch(
+          `https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`,
+          {
             method: "PUT",
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -51,40 +47,42 @@ const Player: React.FC<PlayerProps> = ({ track, accessToken }) => {
             },
             body: JSON.stringify({
               uris: [track.uri],
-              device_id: deviceId,
             }),
-          });
-          setIsPlaying(true);
-        } catch (err) {
-          console.error("Error playing track", err);
-        }
-      })();
-    }
-  }, [player, isReady, track, accessToken, deviceId]);
+          }
+        );
+        setIsPlaying(true);
+      } catch (err) {
+        console.error("playback error", err);
+      }
+    };
+
+    play();
+  }, [track.uri, accessToken, deviceId, isReady]);
 
   return (
-    <div className="bg-white rounded-md shadow-md p-4 flex flex-col items-center w-full max-w-md">
+    <div className="bg-white p-4 rounded-md shadow-md text-center w-full max-w-md">
       <Image
         src={track.album.images[0].url}
-        alt={`${track.album.name} cover`}
+        alt={track.name}
         width={192}
         height={192}
-        className="object-cover rounded-md mb-4"
+        className="rounded-md mb-4"
       />
-      <div className="text-center mb-4">
-        <div className="font-bold text-lg">{track.name}</div>
-        <div className="text-sm text-gray-600">
-          {track.artists.map((artist) => artist.name).join(", ")} -{" "}
-          {track.album.name}
-        </div>
-      </div>
-
+      <h2 className="text-xl font-bold">{track.name}</h2>
+      <p className="text-gray-600 text-sm">
+        {track.artists.map((a) => a.name).join(", ")} - {track.album.name}
+      </p>
       <button
         onClick={handlePlayPause}
-        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-full"
+        className="mt-4 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-full"
       >
         {isPlaying ? "一時停止" : "再生"}
       </button>
+      {/* <div>
+        <div>deviceId: {deviceId}</div>
+        <div>isReady: {isReady ? "true" : "false"}</div>
+        <div>accessToken: {accessToken ? "取得済み" : "未取得"}</div>
+      </div> */}
     </div>
   );
 };
