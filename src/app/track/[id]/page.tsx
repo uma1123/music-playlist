@@ -23,7 +23,6 @@ export default function TrackDetailPage() {
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4">{track.name}</h1>
       <Player track={track} accessToken={accessToken!} />
     </div>
   );
