@@ -27,7 +27,7 @@ export interface Track {
 export interface SearchResult {
   tracks: {
     items: Track[];
-    // 他のページング情報など
+    total: number;
   };
-  // 他のタイプ (artists, albumsなど)
+  error?: string;
 }
