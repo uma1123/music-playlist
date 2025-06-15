@@ -7,12 +7,12 @@ export interface Artist {
 export interface Album {
   id: string;
   name: string;
-  images: {
+  uri: string;
+  images: Array<{
     url: string;
     height: number;
     width: number;
-  }[];
-  uri: string;
+  }>;
 }
 
 export interface Track {
