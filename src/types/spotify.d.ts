@@ -20,8 +20,7 @@ export interface Track {
   name: string;
   artists: Artist[];
   album: Album;
-  uri: string; // 再生に必要なURI
-  // Additional properties: duration_ms, explicit, etc.
+  uri: string;
 }
 
 export interface SearchResult {
