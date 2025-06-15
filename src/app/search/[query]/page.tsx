@@ -15,21 +15,18 @@ export default function SearchResultPage() {
   const [hasMore, setHasMore] = useState(true);
   const router = useRouter();
 
-  // 検索ワードが変わったらリセット
   useEffect(() => {
     setTracks([]);
     setOffset(0);
     setHasMore(true);
   }, [query]);
 
-  // 初回・検索ワード変更時に取得
   useEffect(() => {
     if (!query) return;
     fetchTracks(0, true);
     // eslint-disable-next-line
   }, [query]);
 
-  // 曲を取得する関数
   const fetchTracks = async (offsetValue = offset, isReset = false) => {
     setLoading(true);
     setError(null);
@@ -49,6 +46,11 @@ export default function SearchResultPage() {
           data.tracks.items.length > 0 &&
             data.tracks.total > offsetValue + data.tracks.items.length
         );
+
+        // ★ ここで取得した曲をキューに自動追加 ★
+        if (isReset && data.tracks.items.length > 0) {
+          await addTracksToQueue(data.tracks.items);
+        }
       } else {
         setError(data.error || "検索に失敗しました");
       }
@@ -56,6 +58,25 @@ export default function SearchResultPage() {
       setError("検索に失敗しました");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 曲をキューに追加（最初の1曲は再生）
+  const addTracksToQueue = async (tracks: Track[]) => {
+    for (let i = 0; i < tracks.length; i++) {
+      await fetch("/api/queue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uri: tracks[i].uri }),
+      });
+
+      if (i === 0) {
+        await fetch("/api/play", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ uri: tracks[i].uri }),
+        });
+      }
     }
   };
 
