@@ -26,9 +26,9 @@ const TrackList: React.FC<TrackListProps> = ({ tracks, onTrackSelect }) => {
       <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {" "}
         {/* gapを少し広げる */}
-        {tracks.map((track) => (
+        {tracks.map((track, idx) => (
           <CardContent
-            key={track.id}
+            key={`${track.id}-${idx}`}
             className="relative group bg-[#282840] hover:bg-[#3a3a5a] transition duration-300 ease-in-out transform hover:-translate-y-2 rounded-lg cursor-pointer p-4 shadow-md"
             onClick={() => handleClick(track)}
           >
