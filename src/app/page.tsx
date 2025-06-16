@@ -5,12 +5,14 @@ import SearchBar from "@/components/SearchBar";
 import { Button } from "@/components/ui/button";
 
 export default function Home() {
-  const { isAuthenticated, login, isLoading } = useSpotifyAuth(); // ←追加
+  //認証状態等を取得
+  const { isAuthenticated, login, isLoading } = useSpotifyAuth();
 
   if (isLoading) {
     return <div className="p-8">認証状態を確認中...</div>;
   }
 
+  //未認証の場合
   if (!isAuthenticated) {
     return (
       <div className="flex flex-col min-h-screen text-white">
@@ -41,6 +43,7 @@ export default function Home() {
       </div>
     );
   } else {
+    //認証済みの場合
     return (
       <div className="min-h-screen flex items-start justify-center bg-gray-100">
         <div className="w-full max-w-lg">

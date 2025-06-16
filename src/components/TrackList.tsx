@@ -12,6 +12,7 @@ interface TrackListProps {
 const TrackList: React.FC<TrackListProps> = ({ tracks, onTrackSelect }) => {
   const router = useRouter();
 
+  //曲をクリックしたときの処理
   const handleClick = (track: Track) => {
     if (onTrackSelect) {
       onTrackSelect(track);

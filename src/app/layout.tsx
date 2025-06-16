@@ -1,5 +1,3 @@
-// ✅ 修正後の RootLayout.tsx（scriptタグ削除済み）
-
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";

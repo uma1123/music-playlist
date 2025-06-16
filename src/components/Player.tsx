@@ -13,13 +13,14 @@ const Player: React.FC<PlayerProps> = ({
   track: initialTrack,
   accessToken,
 }) => {
+  //Web Playback SDKの状態や曲情報を管理
   const { player, deviceId, isReady } = useSpotifyPlayerContext();
   const [isPlaying, setIsPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [currentTrack, setCurrentTrack] = useState<Track>(initialTrack);
 
-  // 定期的に状態を更新する処理
+  // 曲情報が変わったらcurrentTrackを更新
   useEffect(() => {
     setCurrentTrack(initialTrack);
   }, [initialTrack]);
@@ -31,9 +32,9 @@ const Player: React.FC<PlayerProps> = ({
     const updateState = async () => {
       const state = await player.getCurrentState();
       if (state) {
-        setPosition(state.position);
-        setDuration(state.duration);
-        setIsPlaying(!state.paused);
+        setPosition(state.position); //再生位置
+        setDuration(state.duration); //曲の長さ
+        setIsPlaying(!state.paused); //再生中かどうか
 
         // 曲が変わったらcurrentTrackを更新
         if (state.track_window?.current_track?.uri !== currentTrack.uri) {
@@ -96,7 +97,6 @@ const Player: React.FC<PlayerProps> = ({
     play();
   }, [deviceId, isReady, accessToken, initialTrack.uri]);
 
-  // --- 以下、UIの部分はcurrentTrackを参照するように変更 ---
   return (
     <div
       className="relative h-screen flex items-center justify-center overflow-hidden"
@@ -186,7 +186,7 @@ const Player: React.FC<PlayerProps> = ({
   );
 };
 
-// 時間表示用ヘルパー
+// 時間表示用
 const formatTime = (ms: number) => {
   const totalSeconds = Math.floor(ms / 1000);
   const minutes = Math.floor(totalSeconds / 60);

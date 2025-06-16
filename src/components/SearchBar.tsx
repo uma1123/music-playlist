@@ -8,6 +8,7 @@ const SearchBar: React.FC = () => {
   const [query, setQuery] = useState("");
   const router = useRouter();
 
+  //検索処理
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query) return;

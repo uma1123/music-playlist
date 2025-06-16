@@ -1,17 +1,20 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
+//spotifyプレイヤーの状態を管理する型
 interface SpotifyPlayerContextProps {
   player: Spotify.Player | null;
   deviceId: string | null;
   isReady: boolean;
 }
 
+//デフォルト値でcontextを作成
 const SpotifyPlayerContext = createContext<SpotifyPlayerContextProps>({
   player: null,
   deviceId: null,
   isReady: false,
 });
 
+//contextを使うためのカスタムフック
 export const useSpotifyPlayerContext = () => useContext(SpotifyPlayerContext);
 
 interface Props {
@@ -19,6 +22,7 @@ interface Props {
   children: React.ReactNode;
 }
 
+//spotify web playback sdkのプロバイダー
 export const SpotifyPlayerProvider: React.FC<Props> = ({
   accessToken,
   children,
@@ -28,7 +32,7 @@ export const SpotifyPlayerProvider: React.FC<Props> = ({
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    // --- ここから追加 ---
+    //sdkスクリプトがまだ読み込まれていなければ追加
     if (!document.getElementById("spotify-sdk")) {
       const script = document.createElement("script");
       script.id = "spotify-sdk";
@@ -36,32 +40,36 @@ export const SpotifyPlayerProvider: React.FC<Props> = ({
       script.async = true;
       document.body.appendChild(script);
     }
-    // --- ここまで追加 ---
 
-    if (!accessToken) return;
+    if (!accessToken) return; //アクセストークンがなければ何もしない
 
     let interval: NodeJS.Timeout;
 
+    //プレイヤーのセットアップ処理
     const setupPlayer = () => {
       if (!window.Spotify) return;
 
+      //プレイヤーインスタンスを作成
       const _player = new window.Spotify.Player({
         name: "My Web Player",
         getOAuthToken: (cb) => cb(accessToken),
         volume: 0.5,
       });
 
+      //プレイヤーがreadyになった時
       _player.addListener("ready", ({ device_id }) => {
         console.log("✅ Spotify Player Ready:", device_id);
         setDeviceId(device_id);
         setIsReady(true);
       });
 
+      //プレイヤーがnot readyになった時
       _player.addListener("not_ready", ({ device_id }) => {
         console.warn("⚠️ Device not ready:", device_id);
         setIsReady(false);
       });
 
+      //エラー
       _player.addListener("initialization_error", ({ message }) =>
         console.error("❌ Initialization Error:", message)
       );
@@ -75,6 +83,7 @@ export const SpotifyPlayerProvider: React.FC<Props> = ({
         console.error("❌ Playback Error:", message)
       );
 
+      //spotifyと接続できたとき
       _player.connect().then((success) => {
         if (success) {
           console.log("✅ Player connected successfully");
@@ -104,6 +113,7 @@ export const SpotifyPlayerProvider: React.FC<Props> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessToken]);
 
+  //子コンポーネントに値を提供
   return (
     <SpotifyPlayerContext.Provider value={{ player, deviceId, isReady }}>
       {children}

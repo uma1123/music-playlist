@@ -6,8 +6,10 @@ import TrackList from "../../../components/TrackList";
 import SearchBar from "@/components/SearchBar";
 
 export default function SearchResultPage() {
+  //urlパラメータから検索クエリを取得
   const params = useParams<{ query: string }>();
   const query = params?.query ?? "";
+  //検索結果や状態管理用のstate
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -15,18 +17,21 @@ export default function SearchResultPage() {
   const [hasMore, setHasMore] = useState(true);
   const router = useRouter();
 
+  //クエリが変わったらリセット
   useEffect(() => {
     setTracks([]);
     setOffset(0);
     setHasMore(true);
   }, [query]);
 
+  //クエリが変わったら最初の検索を実行
   useEffect(() => {
     if (!query) return;
     fetchTracks(0, true);
     // eslint-disable-next-line
   }, [query]);
 
+  //検索APIから曲を取得
   const fetchTracks = async (offsetValue = offset, isReset = false) => {
     setLoading(true);
     setError(null);
@@ -47,7 +52,6 @@ export default function SearchResultPage() {
             data.tracks.total > offsetValue + data.tracks.items.length
         );
 
-        // ★ ここで取得した曲をキューに自動追加 ★
         if (isReset && data.tracks.items.length > 0) {
           await addTracksToQueue(data.tracks.items);
         }
@@ -80,6 +84,7 @@ export default function SearchResultPage() {
     }
   };
 
+  //曲がクリックされた詳細ページへ遷移
   const handleTrackSelect = (track: Track) => {
     router.push(`/track/${track.id}`);
   };
