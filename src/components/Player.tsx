@@ -20,8 +20,6 @@ const Player: React.FC<PlayerProps> = ({
   const [currentTrack, setCurrentTrack] = useState<Track>(initialTrack);
 
   // 定期的に状態を更新する処理
-  // ...existing code...
-  // initialTrackが変わったらcurrentTrackも更新
   useEffect(() => {
     setCurrentTrack(initialTrack);
   }, [initialTrack]);
@@ -43,15 +41,15 @@ const Player: React.FC<PlayerProps> = ({
             id: state.track_window.current_track.id ?? "",
             name: state.track_window.current_track.name,
             artists: state.track_window.current_track.artists.map((a) => ({
-              id: a.id,
+              id: "",
               name: a.name,
-              uri: a.uri,
+              uri: "",
             })),
             album: {
-              id: state.track_window.current_track.album.id ?? "",
+              id: "",
               name: state.track_window.current_track.album.name,
-              uri: state.track_window.current_track.album.uri ?? "",
-              images: state.track_window.current_track.album.images.map(
+              uri: "",
+              images: (state.track_window.current_track.album.images ?? []).map(
                 (img) => ({
                   url: img.url,
                   height: typeof img.height === "number" ? img.height : 0,
@@ -59,7 +57,7 @@ const Player: React.FC<PlayerProps> = ({
                 })
               ),
             },
-            uri: state.track_window.current_track.uri,
+            uri: state.track_window.current_track.uri ?? "",
           });
         }
       }
@@ -69,7 +67,6 @@ const Player: React.FC<PlayerProps> = ({
     const interval = setInterval(updateState, 1000);
     return () => clearInterval(interval);
   }, [player, currentTrack]);
-  // ...existing code...
 
   // deviceId・isReady・accessToken変化時に初期再生セットアップ
   useEffect(() => {
