@@ -65,27 +65,29 @@ export default function SearchResultPage() {
     }
   };
 
-  // 曲をキューに追加（最初の1曲は再生）
   const addTracksToQueue = async (tracks: Track[]) => {
-    for (let i = 0; i < tracks.length; i++) {
-      await fetch("/api/queue", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uri: tracks[i].uri }),
-      });
+    if (tracks.length === 0) return;
 
-      if (i === 0) {
-        await fetch("/api/play", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ uri: tracks[i].uri }),
-        });
-      }
-    }
+    const uris = tracks.map((t) => t.uri);
+
+    await fetch("/api/play", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ uris }), // ← uriではなく uris にする
+    });
   };
 
   //曲がクリックされた詳細ページへ遷移
   const handleTrackSelect = (track: Track) => {
+    // 曲リスト全体とクリックした曲のindexを保存
+    sessionStorage.setItem(
+      "lastTrackIds",
+      JSON.stringify(tracks.map((t) => t.id))
+    );
+    sessionStorage.setItem(
+      "lastTrackIndex",
+      tracks.findIndex((t) => t.id === track.id).toString()
+    );
     router.push(`/track/${track.id}`);
   };
 
