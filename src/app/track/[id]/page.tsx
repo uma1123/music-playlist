@@ -6,28 +6,44 @@ import Player from "../../../components/Player";
 import useSpotifyAuth from "../../../hooks/useSpotifyAuth";
 
 export default function TrackDetailPage() {
-  //urlから曲IDを取得
   const params = useParams<{ id: string }>();
   const id = params?.id;
-  //spotify認証状態を取得
   const { accessToken } = useSpotifyAuth();
-  //曲状態を管理
-  const [track, setTrack] = useState<Track | null>(null);
+  const [trackList, setTrackList] = useState<Track[]>([]);
+  const [initialIndex, setInitialIndex] = useState(0);
 
-  //曲IDやアクセストークンが変わったらAPIから曲情報を主翼
   useEffect(() => {
     if (!accessToken || !id) return;
-    fetch(`/api/track?id=${id}`)
-      .then((res) => res.json())
-      .then((data) => setTrack(data))
-      .catch(() => setTrack(null));
+    const ids = JSON.parse(sessionStorage.getItem("lastTrackIds") || "[]");
+    const idx = Number(sessionStorage.getItem("lastTrackIndex") || "0");
+    if (ids.length > 0 && ids.includes(id)) {
+      Promise.all(
+        ids.map((tid: string) =>
+          fetch(`/api/track?id=${tid}`).then((res) => res.json())
+        )
+      ).then((tracks) => {
+        setTrackList(tracks);
+        setInitialIndex(idx);
+      });
+    } else {
+      fetch(`/api/track?id=${id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setTrackList([data]);
+          setInitialIndex(0);
+        });
+    }
   }, [accessToken, id]);
 
-  if (!track) return <div>Loading...</div>;
+  if (!trackList.length) return <div>Loading...</div>;
 
   return (
     <div className="p-8">
-      <Player track={track} accessToken={accessToken!} />
+      <Player
+        track={trackList}
+        initialIndex={initialIndex}
+        accessToken={accessToken!}
+      />
     </div>
   );
 }
