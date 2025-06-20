@@ -1,6 +1,6 @@
 "use client";
 import { ImSpotify } from "react-icons/im";
-import useSpotifyAuth from "../hooks/useSpotifyAuth"; // ←追加
+import useSpotifyAuth from "../hooks/useSpotifyAuth"; 
 import SearchBar from "@/components/SearchBar";
 import { Button } from "@/components/ui/button";
 
