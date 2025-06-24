@@ -1,14 +1,27 @@
-import { useEffect, useState } from "react";
-import { useSpotifyPlayerContext } from "../context/SpotifyPlayerProvider";
-import { Track } from "../types/spotify";
+import { useEffect, useState, useRef, useMemo } from "react";
 import Image from "next/image";
+// 例: アイコンをreact-iconsや独自の場所からインポート
 import { Pause, Play, SkipBack, SkipForward } from "lucide-react";
-import { useMemo } from "react";
+import { useSpotifyPlayerContext } from "@/context/SpotifyPlayerProvider";
+
+// 型Trackをインポートまたは定義してください
+// 例: import { Track } from "../types/Track";
+// または下記のような簡易定義を追加
+interface Track {
+  uri: string;
+  name: string;
+  artists: { name: string }[];
+  album: {
+    name: string;
+    images: { url: string }[];
+  };
+}
 
 interface PlayerProps {
-  track: Track | Track[]; // 単一曲または複数曲
+  track: Track | Track[];
   initialIndex?: number;
   accessToken: string;
+  shouldAutoPlay?: boolean; // 追加
 }
 
 const formatTime = (ms: number) => {
@@ -22,23 +35,38 @@ const Player: React.FC<PlayerProps> = ({
   track,
   initialIndex = 0,
   accessToken,
+  shouldAutoPlay = true, // デフォルトは true
 }) => {
-  // 単一曲でも配列化して扱う
+  // 配列化
   const trackList = useMemo(
     () => (Array.isArray(track) ? track : [track]),
     [track]
   );
+
   const { player, deviceId, isReady } = useSpotifyPlayerContext();
   const [isPlaying, setIsPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
+
+  useEffect(() => {
+    setCurrentIndex(initialIndex);
+  }, [initialIndex]);
+
   const [currentTrack, setCurrentTrack] = useState<Track | undefined>(
-    trackList[initialIndex]
+    undefined
   );
+
+  // ★ useRefに変更
+  const hasPlayedOnce = useRef(false);
 
   useEffect(() => {
     setCurrentTrack(trackList[currentIndex]);
+    sessionStorage.setItem("lastTrackIndex", currentIndex.toString());
+
+    return () => {
+      sessionStorage.setItem("lastTrackIndex", currentIndex.toString());
+    };
   }, [trackList, currentIndex]);
 
   useEffect(() => {
@@ -76,6 +104,9 @@ const Player: React.FC<PlayerProps> = ({
     if (!deviceId || !isReady || !accessToken || !trackList[currentIndex]?.uri)
       return;
 
+    // ★ shouldAutoPlayフラグがfalseなら再生しない
+    if (hasPlayedOnce.current || !shouldAutoPlay) return;
+
     const play = async () => {
       try {
         await fetch("/api/play", {
@@ -90,13 +121,18 @@ const Player: React.FC<PlayerProps> = ({
             deviceId,
           }),
         });
+        hasPlayedOnce.current = true;
       } catch (err) {
         console.error("playback error", err);
       }
     };
 
     play();
-  }, [deviceId, isReady, accessToken, currentIndex, trackList]);
+  }, [deviceId, isReady, accessToken, currentIndex, trackList, shouldAutoPlay]);
+
+  // 以下は既存のhandleNext, handlePrevなどそのまま
+
+  // ... 省略（UI部分の前の関数など）
 
   const handleNext = () => {
     if (currentIndex < trackList.length - 1) {
