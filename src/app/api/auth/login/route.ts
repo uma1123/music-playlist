@@ -27,6 +27,7 @@ export async function GET() {
       scope: scope,
       redirect_uri: redirect_uri,
     });
+  console.log("Redirect URi", redirect_uri);
 
   // 認証ページへリダイレクト
   return NextResponse.redirect(authUrl);
