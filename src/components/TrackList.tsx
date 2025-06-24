@@ -14,6 +14,15 @@ const TrackList: React.FC<TrackListProps> = ({ tracks, onTrackSelect }) => {
 
   //曲をクリックしたときの処理
   const handleClick = (track: Track) => {
+    // 曲リストとインデックスを保存
+    sessionStorage.setItem(
+      "lastTrackIds",
+      JSON.stringify(tracks.map((t) => t.id))
+    );
+    sessionStorage.setItem(
+      "lastTrackIndex",
+      String(tracks.findIndex((t) => t.id === track.id))
+    );
     if (onTrackSelect) {
       onTrackSelect(track);
     } else {
