@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
   // 認証後のリダイレクト先
   const redirectBaseUrl =
     //process.env.NEXT_PUBLIC_BASE_URL || "http://127.0.0.1:3000";
-    process.env.NEXT_PUBLIC_BASE_URL || "https://music-orpin-iota.vercel.app/";
+    process.env.NEXT_PUBLIC_BASE_URL || "https://music-orpin-iota.vercel.app";
 
   // トークンをクッキーにセットしてリダイレクト
   const res = NextResponse.redirect(redirectBaseUrl);
