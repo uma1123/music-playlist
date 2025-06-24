@@ -43,6 +43,7 @@ export default function TrackDetailPage() {
         track={trackList}
         initialIndex={initialIndex}
         accessToken={accessToken!}
+        shouldAutoPlay={false}
       />
     </div>
   );
