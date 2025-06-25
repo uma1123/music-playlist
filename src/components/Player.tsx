@@ -164,7 +164,7 @@ const Player: React.FC<PlayerProps> = ({
       {/* メインコンテナ */}
       <div className="relative z-10 flex flex-col items-center justify-center w-full h-full p-4 overflow-y-auto">
         <div className="flex flex-col items-center w-full max-w-md mx-auto">
-          <div className="w-full max-w-[85vw] sm:max-w-xs md:max-w-sm">
+          <div className="w-full max-w-[85vw]">
             <div className="relative w-full aspect-square rounded-lg overflow-hidden shadow-2xl">
               <Image
                 src={currentTrack.album.images[0]?.url}
@@ -172,7 +172,6 @@ const Player: React.FC<PlayerProps> = ({
                 fill
                 className="object-cover"
                 priority
-                sizes="(max-width: 640px) 85vw, (max-width: 768px) 24rem, 24rem"
               />
             </div>
           </div>
