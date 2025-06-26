@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 // 例: アイコンをreact-iconsや独自の場所からインポート
 import { Pause, Play, SkipBack, SkipForward } from "lucide-react";
@@ -35,7 +35,7 @@ const Player: React.FC<PlayerProps> = ({
   track,
   initialIndex = 0,
   accessToken,
-  shouldAutoPlay = true, // デフォルトは true
+  //shouldAutoPlay = true, // デフォルトは true
 }) => {
   // 配列化
   const trackList = useMemo(
@@ -58,7 +58,7 @@ const Player: React.FC<PlayerProps> = ({
   );
 
   // ★ useRefに変更
-  const hasPlayedOnce = useRef(false);
+  //const hasPlayedOnce = useRef(false);
 
   useEffect(() => {
     setCurrentTrack(trackList[currentIndex]);
@@ -100,35 +100,31 @@ const Player: React.FC<PlayerProps> = ({
     };
   }, [player, trackList, currentIndex]);
 
+  // ...existing code...
+
   useEffect(() => {
     if (!deviceId || !isReady || !accessToken || !trackList[currentIndex]?.uri)
       return;
 
-    // ★ shouldAutoPlayフラグがfalseなら再生しない
-    if (hasPlayedOnce.current || !shouldAutoPlay) return;
-
+    // 曲が切り替わったらSpotify APIに再生リストと再生位置を送る
     const play = async () => {
-      try {
-        await fetch("/api/play", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            uris: trackList.map((t) => t.uri),
-            offset: { position: currentIndex },
-            deviceId,
-          }),
-        });
-        hasPlayedOnce.current = true;
-      } catch (err) {
-        console.error("playback error", err);
-      }
+      await fetch("/api/play", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          uris: trackList.map((t) => t.uri),
+          offset: { position: currentIndex },
+          deviceId,
+        }),
+      });
     };
 
     play();
-  }, [deviceId, isReady, accessToken, currentIndex, trackList, shouldAutoPlay]);
+  }, [currentIndex, deviceId, isReady, accessToken, trackList]);
+
+  // ...existing code...
 
   // 以下は既存のhandleNext, handlePrevなどそのまま
 
