@@ -38,7 +38,7 @@ export default function TrackDetailPage() {
   if (!trackList.length) return <div>Loading...</div>;
 
   return (
-    <div className="p-4">
+    <div className="p-1">
       <Player
         track={trackList}
         initialIndex={initialIndex}
