@@ -52,9 +52,10 @@ export default function SearchResultPage() {
             data.tracks.total > offsetValue + data.tracks.items.length
         );
 
-        if (isReset && data.tracks.items.length > 0) {
-          await addTracksToQueue(data.tracks.items);
-        }
+        // 検索時に自動再生しないようにaddTracksToQueueは呼ばない
+        // if (isReset && data.tracks.items.length > 0) {
+        //   await addTracksToQueue(data.tracks.items);
+        // }
       } else {
         setError(data.error || "検索に失敗しました");
       }
@@ -65,17 +66,18 @@ export default function SearchResultPage() {
     }
   };
 
-  const addTracksToQueue = async (tracks: Track[]) => {
-    if (tracks.length === 0) return;
+  // addTracksToQueueは今後のために残しておくが、検索時には呼ばない
+  // const addTracksToQueue = async (tracks: Track[]) => {
+  //   if (tracks.length === 0) return;
 
-    const uris = tracks.map((t) => t.uri);
+  //   const uris = tracks.map((t) => t.uri);
 
-    await fetch("/api/play", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ uris }), // ← uriではなく uris にする
-    });
-  };
+  //   await fetch("/api/play", {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({ uris }),
+  //   });
+  // };
 
   //曲がクリックされた詳細ページへ遷移
   const handleTrackSelect = (track: Track) => {
