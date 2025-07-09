@@ -4,9 +4,6 @@ import Image from "next/image";
 import { Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import { useSpotifyPlayerContext } from "@/context/SpotifyPlayerProvider";
 
-// 型Trackをインポートまたは定義してください
-// 例: import { Track } from "../types/Track";
-// または下記のような簡易定義を追加
 interface Track {
   uri: string;
   name: string;
@@ -48,6 +45,8 @@ const Player: React.FC<PlayerProps> = ({
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  //const [isFavorite, setIsFavorite] = useState(false);
+  //const [favoriteMsg, setFavoriteMsg] = useState<string | null>(null);
 
   useEffect(() => {
     setCurrentIndex(initialIndex);
@@ -56,9 +55,6 @@ const Player: React.FC<PlayerProps> = ({
   const [currentTrack, setCurrentTrack] = useState<Track | undefined>(
     undefined
   );
-
-  // ★ useRefに変更
-  //const hasPlayedOnce = useRef(false);
 
   useEffect(() => {
     setCurrentTrack(trackList[currentIndex]);
@@ -100,8 +96,6 @@ const Player: React.FC<PlayerProps> = ({
     };
   }, [player, trackList, currentIndex]);
 
-  // ...existing code...
-
   useEffect(() => {
     if (!deviceId || !isReady || !accessToken || !trackList[currentIndex]?.uri)
       return;
@@ -123,12 +117,6 @@ const Player: React.FC<PlayerProps> = ({
 
     play();
   }, [currentIndex, deviceId, isReady, accessToken, trackList]);
-
-  // ...existing code...
-
-  // 以下は既存のhandleNext, handlePrevなどそのまま
-
-  // ... 省略（UI部分の前の関数など）
 
   const handleNext = () => {
     if (currentIndex < trackList.length - 1) {
@@ -157,29 +145,32 @@ const Player: React.FC<PlayerProps> = ({
       {/* オーバーレイ */}
       <div className="absolute inset-0 bg-black/80 backdrop-blur-2xl z-0" />
 
-      {/* メインコンテナ */}
-      <div className="relative z-10 flex flex-col items-center justify-center w-full h-full p-4 overflow-y-auto">
-        <div className="flex flex-col items-center w-full max-w-md mx-auto">
-          <div className="w-full max-w-[85vw]">
-            <div className="relative w-full aspect-square rounded-lg overflow-hidden shadow-2xl">
-              <Image
-                src={currentTrack.album.images[0]?.url}
-                alt={currentTrack.name}
-                fill
-                className="object-cover"
-                priority
-              />
-            </div>
+      {/* メインUI */}
+      <div className="relative z-10 flex flex-col items-center justify-center w-full h-full max-h-screen p-2 overflow-hidden">
+        <div className="flex flex-col items-center w-full max-w-md">
+          {/* ジャケット画像 */}
+          <div className="relative w-full max-w-[85vw] h-[40vh] sm:h-[50vh] rounded-lg overflow-hidden shadow-2xl">
+            <Image
+              src={currentTrack.album.images[0]?.url}
+              alt={currentTrack.name}
+              fill
+              className="object-cover"
+              priority
+            />
           </div>
-          <div className="w-full text-center mt-6 mb-4">
-            <h2 className="text-xl sm:text-2xl font-bold text-white drop-shadow-lg break-words">
+
+          {/* 曲情報 */}
+          <div className="text-center mt-4 mb-2 px-2">
+            <h2 className="text-lg sm:text-xl font-bold text-white break-words">
               {currentTrack.name}
             </h2>
-            <p className="text-sm sm:text-base text-white/80 mt-2 drop-shadow break-words px-2">
+            <p className="text-sm text-white/80 mt-1 break-words">
               {currentTrack.artists.map((a) => a.name).join(", ")} -{" "}
               {currentTrack.album.name}
             </p>
           </div>
+
+          {/* シークバー */}
           <div className="w-full px-2">
             <input
               type="range"
@@ -202,38 +193,37 @@ const Player: React.FC<PlayerProps> = ({
                 }%)`,
               }}
             />
-            <div className="flex justify-between w-full mt-2 text-white/80 text-xs font-mono">
+            <div className="flex justify-between mt-1 text-white/80 text-xs font-mono">
               <span>{formatTime(position)}</span>
               <span>{formatTime(duration)}</span>
             </div>
           </div>
-          <div className="flex items-center justify-around w-full mt-6">
+
+          {/* プレイヤーコントロール */}
+          <div className="flex items-center justify-around w-full mt-4">
             <button
-              className="text-white/80 hover:text-white transition-colors"
+              className="text-white/80 hover:text-white"
               onClick={handlePrev}
-              aria-label="前の曲"
               disabled={currentIndex === 0}
             >
-              <SkipBack className="w-8 h-8 sm:w-9 sm:h-9" />
+              <SkipBack className="w-7 h-7" />
             </button>
             <button
               onClick={() => player?.togglePlay()}
-              className="bg-white text-black rounded-full shadow-lg hover:scale-105 active:scale-100 transition p-4"
-              aria-label={isPlaying ? "一時停止" : "再生"}
+              className="bg-white text-black rounded-full p-3"
             >
               {isPlaying ? (
-                <Pause className="w-8 h-8 sm:w-10 sm:h-10 fill-current" />
+                <Pause className="w-6 h-6" />
               ) : (
-                <Play className="w-8 h-8 sm:w-10 sm:h-10 fill-current ml-1" />
+                <Play className="w-6 h-6 ml-1" />
               )}
             </button>
             <button
-              className="text-white/80 hover:text-white transition-colors"
+              className="text-white/80 hover:text-white"
               onClick={handleNext}
-              aria-label="次の曲"
               disabled={currentIndex === trackList.length - 1}
             >
-              <SkipForward className="w-8 h-8 sm:w-9 sm:h-9" />
+              <SkipForward className="w-7 h-7" />
             </button>
           </div>
         </div>
