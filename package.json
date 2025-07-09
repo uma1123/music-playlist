@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@prisma/client": "^6.11.1",
+    "@prisma/extension-accelerate": "^2.0.1",
     "@radix-ui/react-avatar": "^1.1.9",
     "@radix-ui/react-slot": "^1.2.2",
     "@types/cookies": "^0.9.0",
@@ -34,7 +36,9 @@
     "@types/spotify-web-playback-sdk": "^0.1.19",
     "eslint": "^9",
     "eslint-config-next": "15.3.1",
+    "prisma": "^6.11.1",
     "tailwindcss": "^4",
+    "tsx": "^4.20.3",
     "tw-animate-css": "^1.2.9",
     "typescript": "^5"
   }
