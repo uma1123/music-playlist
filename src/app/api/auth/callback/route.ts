@@ -36,10 +36,16 @@ export async function GET(req: NextRequest) {
   const access_token = body.access_token;
   const refresh_token = body.refresh_token;
 
+  // アクセストークン取得後
+  const userRes = await fetch("https://api.spotify.com/v1/me", {
+    headers: { Authorization: `Bearer ${access_token}` },
+  });
+  const user = await userRes.json();
+  const spotifyId = user.id;
+
   // 認証後のリダイレクト先
   const redirectBaseUrl =
-    //process.env.NEXT_PUBLIC_BASE_URL || "http://127.0.0.1:3000";
-    process.env.NEXT_PUBLIC_BASE_URL || "https://music-orpin-iota.vercel.app";
+    process.env.NEXT_PUBLIC_BASE_URL || "http://127.0.0.1:3000";
 
   // トークンをクッキーにセットしてリダイレクト
   const res = NextResponse.redirect(redirectBaseUrl);
@@ -52,6 +58,14 @@ export async function GET(req: NextRequest) {
   });
 
   res.cookies.set("refresh_token", refresh_token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+  });
+
+  // cookieにspotifyIdを保存
+  res.cookies.set("spotifyId", spotifyId, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
