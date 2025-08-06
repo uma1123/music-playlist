@@ -31,6 +31,13 @@ const HistoryList: React.FC<HistoryListProps> = ({ userId, onTrackSelect }) => {
     fetchHistory();
   }, [userId]);
 
+  const formatDuration = (seconds: number | null) => {
+    if (!seconds) return "--:--";
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  };
+
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat("ja-JP", {
       year: "numeric",
@@ -44,7 +51,7 @@ const HistoryList: React.FC<HistoryListProps> = ({ userId, onTrackSelect }) => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-gray-500">読み込み中...</div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
       </div>
     );
   }
@@ -52,50 +59,61 @@ const HistoryList: React.FC<HistoryListProps> = ({ userId, onTrackSelect }) => {
   if (history.length === 0) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-gray-500">再生履歴がありません</div>
+        <div className="text-gray-400">再生履歴がありません</div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-2">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {history.map((item) => (
         <div
           key={item.id}
-          className="flex items-center p-3 bg-white rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer"
+          className="flex items-center gap-4 p-4 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors cursor-pointer border border-gray-700"
           onClick={() => onTrackSelect?.(item.song.spotifyId)}
         >
-          <div className="relative w-12 h-12 mr-3 rounded overflow-hidden">
+          <div className="flex-shrink-0">
             {item.song.imageUrl ? (
               <Image
                 src={item.song.imageUrl}
                 alt={item.song.title}
-                fill
-                className="object-cover"
+                width={64}
+                height={64}
+                className="w-16 h-16 rounded-md object-cover"
+                unoptimized={true}
               />
             ) : (
-              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+              <div className="w-16 h-16 bg-gray-600 rounded-md flex items-center justify-center">
                 <Play className="w-4 h-4 text-gray-400" />
               </div>
             )}
           </div>
 
           <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-gray-900 truncate">
+            <h3 className="font-medium text-white truncate">
               {item.song.title}
             </h3>
-            <p className="text-sm text-gray-500 truncate">{item.song.artist}</p>
-            {item.song.album && (
-              <p className="text-xs text-gray-400 truncate">
-                {item.song.album}
-              </p>
-            )}
+            <p className="text-sm text-gray-400 truncate">{item.song.artist}</p>
+            <p className="text-xs text-gray-500 mt-1">
+              追加日: {formatDate(item.playedAt)}
+            </p>
           </div>
 
-          <div className="flex items-center text-xs text-gray-400 ml-2">
-            <Clock className="w-3 h-3 mr-1" />
-            <span>{formatDate(item.playedAt)}</span>
+          <div className="flex items-center gap-1 text-sm text-gray-400">
+            <Clock size={14} />
+            <span>{formatDuration(item.song.duration)}</span>
           </div>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onTrackSelect?.(item.song.spotifyId);
+            }}
+            className="p-2 bg-green-600 hover:bg-green-500 rounded-full transition-colors"
+            title="再生"
+          >
+            <Play size={16} fill="white" />
+          </button>
         </div>
       ))}
     </div>
