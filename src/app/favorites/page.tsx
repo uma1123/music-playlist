@@ -1,5 +1,6 @@
 "use client";
-import FavoritesList from "@/components/FavoriteList";
+import FavoriteList from "@/components/FavoriteList";
+import { Header } from "@/components/Header";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -33,23 +34,28 @@ export default function FavoritePage() {
   };
 
   if (loading) {
-    return <div className="p-8">読み込み中...</div>;
+    return (
+      <div className="bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 min-h-screen flex items-center justify-center text-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-gray-900 text-white">
-      <div className="container mx-auto px-4 py-8">
-        {/* ヘッダー */}
-        <div className="flex items-center gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">お気に入り</h1>
-            <p className="text-gray-400 mt-1">お気に入りに追加した楽曲一覧</p>
-          </div>
+    <div className="bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 min-h-screen flex flex-col text-white">
+      {/* 固定ヘッダー */}
+      <div className="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-700">
+        <div className="container max-w-6xl mx-auto px-4 py-4">
+          <Header />
+          <h1 className="text-3xl font-bold mt-4">お気に入り</h1>
+          <p className="text-gray-400 mt-1">お気に入りに追加した楽曲一覧</p>
         </div>
+      </div>
 
-        {/* お気に入り一覧 */}
+      {/* メインコンテンツ */}
+      <div className="flex-1 container max-w-6xl mx-auto px-4 py-6">
         {userId ? (
-          <FavoritesList userId={userId} onTrackSelect={handleTrackSelect} />
+          <FavoriteList userId={userId} onTrackSelect={handleTrackSelect} />
         ) : (
           <div className="flex justify-center items-center h-64">
             <p className="text-red-400">ユーザー情報を取得できませんでした</p>
