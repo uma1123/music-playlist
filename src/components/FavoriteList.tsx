@@ -130,7 +130,7 @@ const FavoritesList: React.FC<FavoritesListProps> = ({
   // favoritesが未定義、null、または空配列の場合の安全チェック
   if (!favorites || !Array.isArray(favorites) || favorites.length === 0) {
     return (
-      <div className="flex flex-col justify-center items-center h-64 text-gray-400">
+      <div className="flex flex-col justify-center items-center h-64 text-gray-400 overflow-y-auto">
         <Heart size={48} className="mb-4" />
         <p className="text-lg">お気に入りの楽曲がありません</p>
         <p className="text-sm">
