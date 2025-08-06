@@ -1,8 +1,7 @@
 import { useRouter } from "next/navigation";
 import { Track } from "../types/spotify";
 import Image from "next/image";
-import { Card, CardContent } from "./ui/card";
-import { Play } from "lucide-react"; // アイコンをインポート
+import { Play } from "lucide-react";
 
 interface TrackListProps {
   tracks: Track[];
@@ -32,48 +31,47 @@ const TrackList: React.FC<TrackListProps> = ({ tracks, onTrackSelect }) => {
 
   return (
     // 親Cardに「max-h-screen overflow-y-auto」を追加
-    <Card className="bg-gradient-to-b from-[#1e1e2f] to-[#121220] text-white p-4 rounded-md shadow-lg border-none max-h-screen overflow-y-auto">
-      <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <div className="mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
         {" "}
         {/* gapを少し広げる */}
         {tracks.map((track, idx) => (
-          <CardContent
-            key={`${track.id}-${idx}`}
-            className="relative group bg-[#282840] hover:bg-[#3a3a5a] transition duration-300 ease-in-out transform hover:-translate-y-2 rounded-lg cursor-pointer p-4 shadow-md"
-            onClick={() => handleClick(track)}
-          >
-            <div className="relative">
+          <div key={`${track.id}-${idx}`} className="group cursor-pointer">
+            <div
+              className="relative rounded-xl bg-slate-800 hover:ring-2 hover:ring-blue-500 transition-all"
+              onClick={() => handleClick(track)}
+            >
               <Image
                 src={track.album.images[0].url}
                 alt={`${track.album.name} cover`}
-                width={150} // 画像サイズを少し大きく
-                height={150}
-                className="rounded-md shadow-lg object-cover w-[50%] aspect-square"
+                width={300}
+                height={300}
+                className="w-full h-full object-cover aspect-square"
               />
-              <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <button
-                  aria-label={`Play ${track.name}`}
-                  className="bg-green-500 text-black p-3 rounded-full shadow-lg transform group-hover:scale-110 transition-transform"
-                >
-                  <Play className="w-6 h-6 fill-current" />
-                </button>
+              {/* 黒のグラデーションオーバーレイ */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity"></div>
+
+              {/* 再生アイコン */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center">
+                  <Play size={20} />
+                </div>
+              </div>
+
+              {/* 曲名とアーティスト */}
+              <div className="absolute bottom-0 w-full p-3 bg-black/40 backdrop-blur-sm">
+                <h3 className="text-white font-semibold text-sm truncate">
+                  {track.name}
+                </h3>
+                <p className="text-gray-300 text-xs truncate">
+                  {track.artists.map((artist) => artist.name).join(", ")}
+                </p>
               </div>
             </div>
-            <div className="mt-4">
-              {" "}
-              {/* mtを少し広げる */}
-              <div className="font-bold text-base truncate">
-                {track.name}
-              </div>{" "}
-              {/* font-boldで強調 */}
-              <div className="text-sm text-gray-400 truncate">
-                {track.artists.map((artist) => artist.name).join(", ")}
-              </div>
-            </div>
-          </CardContent>
+          </div>
         ))}
       </div>
-    </Card>
+    </div>
   );
 };
 
