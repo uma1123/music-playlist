@@ -35,16 +35,25 @@ export default function TrackDetailPage() {
     }
   }, [accessToken, id]);
 
-  if (!trackList.length) return <div>Loading...</div>;
+  if (!trackList.length) {
+    return (
+      <div className="bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 min-h-screen flex items-center justify-center text-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-1">
-      <Player
-        track={trackList}
-        initialIndex={initialIndex}
-        accessToken={accessToken!}
-        shouldAutoPlay={false}
-      />
+    <div className="bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 min-h-screen flex flex-col text-white">
+      {/* プレイヤーコンテンツ */}
+      <div className="flex-1 container max-w-6xl mx-auto px-4 py-6">
+        <Player
+          track={trackList}
+          initialIndex={initialIndex}
+          accessToken={accessToken!}
+          shouldAutoPlay={false}
+        />
+      </div>
     </div>
   );
 }
