@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Music2, Search } from "lucide-react";
+import { Search } from "lucide-react";
 
 const SearchBar: React.FC = () => {
   const [query, setQuery] = useState("");
@@ -16,17 +16,14 @@ const SearchBar: React.FC = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-lg w-full mx-auto ">
+    <form onSubmit={handleSubmit} className="max-w-2xl w-full mx-auto ">
       <div className="relative flex items-center">
-        <div className="absolute left-4 z-10">
-          <Music2 className="h-6 w-6 text-gray-500" />
-        </div>
         <Input
           type="text"
           placeholder="再生したい曲やアーティストを検索"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="pl-14 pr-24 py-5 text-xl bg-white/90 rounded-full backdrop-blur-sm border-0 shadow-lg forcus:bg-white transition-all"
+          className="w-full py-5 px-6 text-lg bg-white/10 backdrop-blur-sm border border-slate-600 rounded-2xl text-white placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-blue-500"
         />
         <Button
           type="submit"
