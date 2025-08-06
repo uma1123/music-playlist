@@ -1,7 +1,14 @@
 import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 // 例: アイコンをreact-iconsや独自の場所からインポート
-import { Pause, Play, SkipBack, SkipForward } from "lucide-react";
+import {
+  Heart,
+  HeartOff,
+  Pause,
+  Play,
+  SkipBack,
+  SkipForward,
+} from "lucide-react";
 import { useSpotifyPlayerContext } from "@/context/SpotifyPlayerProvider";
 
 interface Track {
@@ -12,6 +19,7 @@ interface Track {
     name: string;
     images: { url: string }[];
   };
+  duration_ms: number;
 }
 
 interface PlayerProps {
@@ -32,7 +40,6 @@ const Player: React.FC<PlayerProps> = ({
   track,
   initialIndex = 0,
   accessToken,
-  //shouldAutoPlay = true, // デフォルトは true
 }) => {
   // 配列化
   const trackList = useMemo(
@@ -45,8 +52,9 @@ const Player: React.FC<PlayerProps> = ({
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
-  //const [isFavorite, setIsFavorite] = useState(false);
-  //const [favoriteMsg, setFavoriteMsg] = useState<string | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteMsg, setFavoriteMsg] = useState<string | null>(null);
+  const [loadingFavorite, setLoadingFavorite] = useState(false);
 
   useEffect(() => {
     setCurrentIndex(initialIndex);
@@ -100,7 +108,6 @@ const Player: React.FC<PlayerProps> = ({
     if (!deviceId || !isReady || !accessToken || !trackList[currentIndex]?.uri)
       return;
 
-    // 曲が切り替わったらSpotify APIに再生リストと再生位置を送る
     const play = async () => {
       await fetch("/api/play", {
         method: "POST",
@@ -113,10 +120,155 @@ const Player: React.FC<PlayerProps> = ({
           deviceId,
         }),
       });
+
+      const postPlayHistory = async (currentTrack: Track, userId: string) => {
+        if (!currentTrack || !userId) return;
+
+        const trackData = {
+          id: currentTrack.uri.split(":")[2],
+          name: currentTrack.name,
+          artists: currentTrack.artists,
+          album: currentTrack.album,
+          duration_ms: currentTrack.duration_ms,
+          images: currentTrack.album.images,
+        };
+
+        try {
+          await fetch("/api/play-history", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              userId,
+              track: trackData,
+            }),
+          });
+        } catch (error) {
+          console.error("Error posting play history:", error);
+        }
+      };
+
+      const userId = sessionStorage.getItem("userId");
+      if (userId && trackList[currentIndex]) {
+        await postPlayHistory(trackList[currentIndex], userId);
+      }
     };
 
     play();
   }, [currentIndex, deviceId, isReady, accessToken, trackList]);
+
+  //お気に入り状態をチェック
+  useEffect(() => {
+    const checkFavoriteStatus = async () => {
+      if (!currentTrack) return;
+
+      const userId = sessionStorage.getItem("userId");
+      if (!userId) return;
+
+      try {
+        const response = await fetch(`/api/favorite?userId=${userId}`);
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Favorite status check response:", data); // デバッグ用
+
+          const trackId = currentTrack.uri.split(":")[2];
+
+          // データ構造を安全にチェック
+          let favorites = [];
+          if (data && Array.isArray(data.favorites)) {
+            favorites = data.favorites;
+          } else if (data && Array.isArray(data)) {
+            favorites = data;
+          } else {
+            console.warn("Unexpected favorites data structure:", data);
+            setIsFavorite(false);
+            return;
+          }
+
+          const isInFavorites = favorites.some(
+            (fav: { song: { spotifyId: string } }) =>
+              fav.song?.spotifyId === trackId
+          );
+          setIsFavorite(isInFavorites);
+        } else {
+          console.error("Failed to fetch favorites:", response.status);
+          setIsFavorite(false);
+        }
+      } catch (error) {
+        console.error("Error checking favorite status:", error);
+        setIsFavorite(false);
+      }
+    };
+
+    checkFavoriteStatus();
+  }, [currentTrack]);
+
+  const handleFavorite = async () => {
+    if (!currentTrack || loadingFavorite) return;
+
+    setLoadingFavorite(true);
+    const userId = sessionStorage.getItem("userId");
+
+    if (!userId) {
+      setFavoriteMsg("ユーザー情報が見つかりません");
+      setTimeout(() => setFavoriteMsg(null), 2000);
+      setLoadingFavorite(false);
+      return;
+    }
+
+    const trackData = {
+      id: currentTrack.uri.split(":")[2],
+      name: currentTrack.name,
+      artists: currentTrack.artists,
+      album: currentTrack.album,
+      duration_ms: currentTrack.duration_ms,
+    };
+
+    try {
+      const response = await fetch("/api/favorite", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId,
+          track: trackData,
+          action: isFavorite ? "remove" : "add",
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+
+        // レスポンスの成功フラグをチェック
+        if (result.success || result.success !== false) {
+          setIsFavorite(!isFavorite);
+          setFavoriteMsg(
+            isFavorite ? "お気に入りを解除しました" : "お気に入りに追加しました"
+          );
+        } else {
+          // 既にお気に入りに追加されている場合
+          if (result.message === "Already in favorites") {
+            setIsFavorite(true);
+            setFavoriteMsg("既にお気に入りに追加されています");
+          } else {
+            setFavoriteMsg("エラーが発生しました");
+          }
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Favorite API error:", errorData);
+        setFavoriteMsg("エラーが発生しました");
+      }
+    } catch (error) {
+      console.error("Error managing favorite:", error);
+      setFavoriteMsg("エラーが発生しました");
+    }
+
+    setTimeout(() => setFavoriteMsg(null), 2000);
+    setLoadingFavorite(false);
+  };
 
   const handleNext = () => {
     if (currentIndex < trackList.length - 1) {
@@ -147,6 +299,11 @@ const Player: React.FC<PlayerProps> = ({
 
       {/* メインUI */}
       <div className="relative z-10 flex flex-col items-center justify-center w-full h-full max-h-screen p-2 overflow-hidden">
+        {favoriteMsg && (
+          <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 bg-red-300 text-black font-semibold text-base px-6 py-3 rounded-lg shadow-lg border-red-500 transition-all animate-fade-in">
+            {favoriteMsg}
+          </div>
+        )}
         <div className="flex flex-col items-center w-full max-w-md">
           {/* ジャケット画像 */}
           <div className="relative w-full max-w-[85vw] h-[40vh] sm:h-[50vh] rounded-lg overflow-hidden shadow-2xl">
@@ -168,6 +325,24 @@ const Player: React.FC<PlayerProps> = ({
               {currentTrack.artists.map((a) => a.name).join(", ")} -{" "}
               {currentTrack.album.name}
             </p>
+            {/* お気に入りボタン */}
+            <div className="flex flex-col items-end mt-3">
+              <button
+                className={`flex items-end gap-2 px-5 py-2 rounded-full shadow ${
+                  loadingFavorite
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-red-300 hover:bg-red-200"
+                }`}
+                onClick={handleFavorite}
+                disabled={loadingFavorite}
+              >
+                {isFavorite ? (
+                  <Heart size={30} fill="red" />
+                ) : (
+                  <HeartOff size={30} />
+                )}
+              </button>
+            </div>
           </div>
 
           {/* シークバー */}
