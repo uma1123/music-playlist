@@ -2,6 +2,7 @@
 import { useRouter } from "next/navigation";
 import HistoryList from "@/components/HistoryList";
 import { useEffect, useState } from "react";
+import { Header } from "@/components/Header";
 
 export default function HistoryPage() {
   const router = useRouter();
@@ -33,12 +34,35 @@ export default function HistoryPage() {
     router.push(`/track/${trackId}`);
   };
 
+  if (loading) {
+    return (
+      <div className="bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 min-h-screen flex items-center justify-center text-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">再生履歴</h1>
-      {userId && (
-        <HistoryList userId={userId} onTrackSelect={handleTrackSelect} />
-      )}
+    <div className="bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 min-h-screen flex flex-col text-white">
+      {/* 固定ヘッダー */}
+      <div className="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-700">
+        <div className="container max-w-6xl mx-auto px-4 py-4">
+          <Header />
+          <h1 className="text-3xl font-bold mt-4">再生履歴</h1>
+          <p className="text-gray-400 mt-1">最近再生した楽曲一覧</p>
+        </div>
+      </div>
+
+      {/* メインコンテンツ */}
+      <div className="flex-1 container max-w-6xl mx-auto px-4 py-6">
+        {userId ? (
+          <HistoryList userId={userId} onTrackSelect={handleTrackSelect} />
+        ) : (
+          <div className="flex justify-center items-center h-64">
+            <p className="text-red-400">ユーザー情報を取得できませんでした</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
