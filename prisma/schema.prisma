@@ -1,0 +1,70 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String?   @unique
+  name        String?
+  spotifyId   String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  favorites   Favorite[]
+  playHistory PlayHistory[]
+  
+  @@map("users")
+}
+
+model Song {
+  id          String   @id @default(cuid())
+  spotifyId   String   @unique
+  title       String
+  artist      String
+  album       String?
+  duration    Int?     // 秒単位
+  previewUrl  String?
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  
+  favorites   Favorite[]
+  playHistory PlayHistory[]
+  
+  @@map("songs")
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  songId    String
+  createdAt DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  song Song @relation(fields: [songId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, songId])
+  @@map("favorites")
+}
+
+model PlayHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  songId    String
+  playedAt  DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  song Song @relation(fields: [songId], references: [id], onDelete: Cascade)
+  
+  @@map("play_history")
+}
