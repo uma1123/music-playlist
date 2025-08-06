@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     return fetch(
       `https://api.spotify.com/v1/search?q=${encodeURIComponent(
         query
-      )}&type=track&limit=12&offset=${offset}`,
+      )}&type=track&limit=15&offset=${offset}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
