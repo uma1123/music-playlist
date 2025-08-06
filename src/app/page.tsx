@@ -8,10 +8,8 @@ import { Header } from "@/components/Header";
 import { useEffect } from "react";
 
 export default function Home() {
-  // 認証状態などを取得
   const { isAuthenticated, login, isLoading } = useSpotifyAuth();
 
-  // useEffectは必ずトップレベルで呼ぶ
   useEffect(() => {
     if (isAuthenticated) {
       (async () => {
@@ -33,25 +31,27 @@ export default function Home() {
     }
   }, [isAuthenticated]);
 
-  // ローディング中は読み込み画面を表示
   if (isLoading) {
-    return <div className="p-8">認証状態を確認中...</div>;
+    return (
+      <div className="bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 min-h-screen flex items-center justify-center text-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      </div>
+    );
   }
 
-  // 未認証の場合はログイン画面
   if (!isAuthenticated) {
     return (
-      <div className="flex flex-col min-h-screen text-white">
+      <div className="bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 min-h-screen flex flex-col text-white">
         <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
           <div className="w-full max-w-md space-y-8">
             <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-b from-[#1e1e2f] to-[#121220] mb-6">
-                <ImSpotify className="w-8 h-8" />
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-600 mb-6">
+                <ImSpotify className="w-8 h-8 text-white" />
               </div>
-              <h1 className="text-3xl font-bold tracking-tight text-black">
+              <h1 className="text-3xl font-bold tracking-tight text-white">
                 Music Playlist with Spotify
               </h1>
-              <p className="mt-2 text-sm text-zinc-400">
+              <p className="mt-2 text-sm text-gray-400">
                 Spotifyアカウントでログインしてください
               </p>
             </div>
@@ -59,9 +59,10 @@ export default function Home() {
             <div className="space-y-4">
               <Button
                 onClick={login}
-                className="w-full bg-gradient-to-b from-[#1e1e2f] to-[#121220] hover:to-[#1e1e1f] text-white"
+                className="w-full bg-green-600 hover:bg-green-500 text-white font-medium py-3"
               >
-                ログイン
+                <ImSpotify className="w-5 h-5 mr-2" />
+                Spotifyでログイン
               </Button>
             </div>
           </div>
@@ -70,17 +71,18 @@ export default function Home() {
     );
   }
 
-  // 認証済みの場合の画面表示
   return (
-    <div className="bg-slate-900/90 min-h-screen flex flex-col">
-      {/* 固定ヘッダー + 検索バー */}
-      <div className="top-0 z-30 bg-slate-900/90 ">
+    <div className="bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 min-h-screen flex flex-col text-white">
+      {/* 固定ヘッダー */}
+      <div className="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-700">
         <div className="container max-w-6xl mx-auto px-4 py-4">
           <Header />
-          <div className="mt-4">
-            <SearchBar />
-          </div>
         </div>
+      </div>
+
+      {/* メインコンテンツ */}
+      <div className="flex-1 container max-w-6xl mx-auto px-4 py-6">
+        <SearchBar />
       </div>
     </div>
   );
