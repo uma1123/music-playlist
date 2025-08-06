@@ -52,11 +52,6 @@ export default function SearchResultPage() {
           data.tracks.items.length > 0 &&
             data.tracks.total > offsetValue + data.tracks.items.length
         );
-
-        // 検索時に自動再生しないようにaddTracksToQueueは呼ばない
-        // if (isReset && data.tracks.items.length > 0) {
-        //   await addTracksToQueue(data.tracks.items);
-        // }
       } else {
         setError(data.error || "検索に失敗しました");
       }
@@ -66,19 +61,6 @@ export default function SearchResultPage() {
       setLoading(false);
     }
   };
-
-  // addTracksToQueueは今後のために残しておくが、検索時には呼ばない
-  // const addTracksToQueue = async (tracks: Track[]) => {
-  //   if (tracks.length === 0) return;
-
-  //   const uris = tracks.map((t) => t.uri);
-
-  //   await fetch("/api/play", {
-  //     method: "POST",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify({ uris }),
-  //   });
-  // };
 
   //曲がクリックされた詳細ページへ遷移
   const handleTrackSelect = (track: Track) => {
@@ -113,7 +95,11 @@ export default function SearchResultPage() {
             「{query}」の検索結果
           </h1>
 
-          {loading && tracks.length === 0 && <div>検索中...</div>}
+          {loading && tracks.length === 0 && (
+            <div className="bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 min-h-screen flex items-center justify-center text-white">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+            </div>
+          )}
           {error && <div className="text-red-500">{error}</div>}
 
           {!loading && !error && (
