@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
   // 認証後のリダイレクト先
   const redirectBaseUrl =
     process.env.NEXT_PUBLIC_BASE_URL ||
-    "https://playlist-inky-seven.vercel.app";
+    "https://music-playlist-zeta.vercel.app/api/auth/callback";
 
   // トークンをクッキーにセットしてリダイレクト
   const res = NextResponse.redirect(redirectBaseUrl);
