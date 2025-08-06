@@ -3,22 +3,7 @@
 import { useEffect, useState } from "react";
 import { Heart, Play, Clock } from "lucide-react";
 import Image from "next/image";
-
-interface Favorite {
-  id: string;
-  userId: string;
-  songId: string;
-  createdAt: string;
-  song: {
-    id: string;
-    spotifyId: string;
-    title: string;
-    artist: string;
-    album: string | null;
-    duration: number | null;
-    imageUrl: string | null;
-  };
-}
+import { Favorite } from "@/types/spotify";
 
 interface FavoritesListProps {
   userId: string;
@@ -156,11 +141,11 @@ const FavoritesList: React.FC<FavoritesListProps> = ({
   }
 
   return (
-    <div className="space-y-2">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {favorites.map((favorite) => (
         <div
           key={favorite.id}
-          className="flex items-center gap-4 p-4 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors"
+          className="flex items-center gap-4 p-4 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors cursor-pointer border border-gray-700"
         >
           {/* アルバムアート */}
           <div className="flex-shrink-0">
