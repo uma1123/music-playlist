@@ -30,3 +30,21 @@ export interface SearchResult {
   };
   error?: string;
 }
+
+export interface PlayHistory {
+  id: string;
+  userId: string;
+  songId: string;
+  playedAt: Date;
+  song: {
+    id: string;
+    spotifyId: string;
+    title: string;
+    artist: string;
+    album: string | null;
+    duration: number | null;
+    previewUrl: string | null;
+    imageUrl: string | null;
+    createdAt: Date;
+  };
+}
