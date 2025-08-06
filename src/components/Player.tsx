@@ -1,6 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
-// 例: アイコンをreact-iconsや独自の場所からインポート
 import {
   Heart,
   HeartOff,
@@ -26,7 +25,7 @@ interface PlayerProps {
   track: Track | Track[];
   initialIndex?: number;
   accessToken: string;
-  shouldAutoPlay?: boolean; // 追加
+  shouldAutoPlay?: boolean;
 }
 
 const formatTime = (ms: number) => {
@@ -298,15 +297,38 @@ const Player: React.FC<PlayerProps> = ({
       <div className="absolute inset-0 bg-black/80 backdrop-blur-2xl z-0" />
 
       {/* メインUI */}
-      <div className="relative z-10 flex flex-col items-center justify-center w-full h-full max-h-screen p-2 overflow-hidden">
+      <div className="relative z-10 flex flex-col items-center justify-center w-full h-full max-h-screen p-4 overflow-hidden">
         {favoriteMsg && (
           <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 bg-red-300 text-black font-semibold text-base px-6 py-3 rounded-lg shadow-lg border-red-500 transition-all animate-fade-in">
             {favoriteMsg}
           </div>
         )}
-        <div className="flex flex-col items-center w-full max-w-md">
+
+        {/* お気に入りボタン - 右上に固定 */}
+        <div className="absolute top-8 right-8 z-20">
+          <button
+            className={`flex items-center justify-center w-12 h-12 rounded-full shadow-lg ${
+              loadingFavorite
+                ? "bg-gray-400 cursor-not-allowed"
+                : isFavorite
+                ? "bg-red-500 hover:bg-red-400"
+                : "bg-gray-600 hover:bg-gray-500"
+            }`}
+            onClick={handleFavorite}
+            disabled={loadingFavorite}
+            title={isFavorite ? "お気に入りから削除" : "お気に入りに追加"}
+          >
+            {isFavorite ? (
+              <Heart size={20} fill="white" className="text-white" />
+            ) : (
+              <HeartOff size={20} className="text-white" />
+            )}
+          </button>
+        </div>
+
+        <div className="flex flex-col items-center w-full max-w-lg">
           {/* ジャケット画像 */}
-          <div className="relative w-full max-w-[85vw] h-[40vh] sm:h-[50vh] rounded-lg overflow-hidden shadow-2xl">
+          <div className="relative w-80 h-80 rounded-2xl overflow-hidden shadow-2xl mb-8">
             <Image
               src={currentTrack.album.images[0]?.url}
               alt={currentTrack.name}
@@ -317,36 +339,17 @@ const Player: React.FC<PlayerProps> = ({
           </div>
 
           {/* 曲情報 */}
-          <div className="text-center mt-4 mb-2 px-2">
-            <h2 className="text-lg sm:text-xl font-bold text-white break-words">
+          <div className="text-center mb-8 px-4">
+            <h2 className="text-xl sm:text-3xl font-bold text-white mb-2">
               {currentTrack.name}
             </h2>
-            <p className="text-sm text-white/80 mt-1 break-words">
-              {currentTrack.artists.map((a) => a.name).join(", ")} -{" "}
-              {currentTrack.album.name}
+            <p className="text-lg text-white/70">
+              {currentTrack.artists.map((a) => a.name).join(", ")}
             </p>
-            {/* お気に入りボタン */}
-            <div className="flex flex-col items-end mt-3">
-              <button
-                className={`flex items-end gap-2 px-5 py-2 rounded-full shadow ${
-                  loadingFavorite
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-red-300 hover:bg-red-200"
-                }`}
-                onClick={handleFavorite}
-                disabled={loadingFavorite}
-              >
-                {isFavorite ? (
-                  <Heart size={30} fill="red" />
-                ) : (
-                  <HeartOff size={30} />
-                )}
-              </button>
-            </div>
           </div>
 
           {/* シークバー */}
-          <div className="w-full px-2">
+          <div className="w-full max-w-md mb-6">
             <input
               type="range"
               min={0}
@@ -359,46 +362,48 @@ const Player: React.FC<PlayerProps> = ({
                   setPosition(seekTo);
                 }
               }}
-              className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-neutral-600"
+              className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-white/20"
               style={{
-                background: `linear-gradient(to right, #3b82f6 ${
+                background: `linear-gradient(to right, #8b5cf6 ${
                   duration ? (position / duration) * 100 : 0
-                }%, rgb(75 85 99) ${
+                }%, rgba(255,255,255,0.2) ${
                   duration ? (position / duration) * 100 : 0
                 }%)`,
               }}
             />
-            <div className="flex justify-between mt-1 text-white/80 text-xs font-mono">
+            <div className="flex justify-between mt-2 text-white/60 text-sm">
               <span>{formatTime(position)}</span>
               <span>{formatTime(duration)}</span>
             </div>
           </div>
 
           {/* プレイヤーコントロール */}
-          <div className="flex items-center justify-around w-full mt-4">
+          <div className="flex items-center justify-center gap-8">
             <button
-              className="text-white/80 hover:text-white"
+              className="text-white/70 hover:text-white transition-colors disabled:opacity-30"
               onClick={handlePrev}
               disabled={currentIndex === 0}
             >
-              <SkipBack className="w-7 h-7" />
+              <SkipBack size={32} />
             </button>
+
             <button
               onClick={() => player?.togglePlay()}
-              className="bg-white text-black rounded-full p-3"
+              className="bg-white text-black rounded-full p-4 hover:scale-105 transition-transform shadow-lg"
             >
               {isPlaying ? (
-                <Pause className="w-6 h-6" />
+                <Pause size={28} />
               ) : (
-                <Play className="w-6 h-6 ml-1" />
+                <Play size={28} className="ml-1" />
               )}
             </button>
+
             <button
-              className="text-white/80 hover:text-white"
+              className="text-white/70 hover:text-white transition-colors disabled:opacity-30"
               onClick={handleNext}
               disabled={currentIndex === trackList.length - 1}
             >
-              <SkipForward className="w-7 h-7" />
+              <SkipForward size={32} />
             </button>
           </div>
         </div>
@@ -406,4 +411,5 @@ const Player: React.FC<PlayerProps> = ({
     </div>
   );
 };
+
 export default Player;
