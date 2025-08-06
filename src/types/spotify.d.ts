@@ -20,6 +20,7 @@ export interface Track {
   name: string;
   artists: Artist[];
   album: Album;
+  duration_ms: number;
   uri: string;
 }
 
@@ -46,5 +47,21 @@ export interface PlayHistory {
     previewUrl: string | null;
     imageUrl: string | null;
     createdAt: Date;
+  };
+}
+
+export interface Favorite {
+  id: string;
+  userId: string;
+  songId: string;
+  createdAt: string;
+  song: {
+    id: string;
+    spotifyId: string;
+    title: string;
+    artist: string;
+    album: string | null;
+    duration: number | null;
+    imageUrl: string | null;
   };
 }
