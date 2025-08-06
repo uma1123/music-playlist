@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Track, SearchResult } from "../../../types/spotify";
 import TrackList from "../../../components/TrackList";
 import SearchBar from "@/components/SearchBar";
+import { Header } from "@/components/Header";
 
 export default function SearchResultPage() {
   //urlパラメータから検索クエリを取得
@@ -94,27 +95,45 @@ export default function SearchResultPage() {
   };
 
   return (
-    <div className="container mx-auto p-8 overflow-y-auto h-screen">
-      <SearchBar />
-      <h1 className="text-2xl font-bold mb-6">「{query}」の検索結果</h1>
-      {loading && tracks.length === 0 && <div>検索中...</div>}
-      {error && <div className="text-red-500">{error}</div>}
-      {!loading && !error && (
-        <>
-          <TrackList tracks={tracks} onTrackSelect={handleTrackSelect} />
-          {hasMore && (
-            <div className="flex justify-center mt-6">
-              <button
-                onClick={() => fetchTracks(offset)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded shadow"
-                disabled={loading}
-              >
-                {loading ? "読み込み中..." : "もっと見る"}
-              </button>
-            </div>
+    <div className="bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 min-h-screen flex flex-col">
+      {/* 固定ヘッダー + 検索バー */}
+      <div className="sticky top-0 z-30 bg-slate-900/90 backdrop-blur-md border-b border-slate-700">
+        <div className="container max-w-6xl mx-auto px-4 py-4">
+          <Header />
+          <div className="mt-4">
+            <SearchBar />
+          </div>
+        </div>
+      </div>
+
+      {/* 検索結果：高さを明示してスクロール可能に */}
+      <div className="flex-1 overflow-hidden">
+        <div className="overflow-y-auto h-[calc(100vh-128px)] px-4 py-6 container max-w-6xl mx-auto">
+          <h1 className="text-2xl font-bold mb-6 text-white">
+            「{query}」の検索結果
+          </h1>
+
+          {loading && tracks.length === 0 && <div>検索中...</div>}
+          {error && <div className="text-red-500">{error}</div>}
+
+          {!loading && !error && (
+            <>
+              <TrackList tracks={tracks} onTrackSelect={handleTrackSelect} />
+              {hasMore && (
+                <div className="flex justify-center mt-6">
+                  <button
+                    onClick={() => fetchTracks(offset)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full shadow transition-colors duration-300"
+                    disabled={loading}
+                  >
+                    {loading ? "読み込み中..." : "もっと見る"}
+                  </button>
+                </div>
+              )}
+            </>
           )}
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 }
