@@ -141,69 +141,71 @@ const FavoritesList: React.FC<FavoritesListProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {favorites.map((favorite) => (
-        <div
-          key={favorite.id}
-          className="flex items-center gap-4 p-4 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors cursor-pointer border border-gray-700"
-        >
-          {/* アルバムアート */}
-          <div className="flex-shrink-0">
-            {favorite.song.imageUrl ? (
-              <Image
-                src={favorite.song.imageUrl}
-                alt={favorite.song.album || "Album"}
-                width={64}
-                height={64}
-                className="w-16 h-16 rounded-md object-cover"
-                style={{ objectFit: "cover" }}
-                unoptimized={true} // 外部画像の場合はtrueに設定
-              />
-            ) : (
-              <div className="w-16 h-16 bg-gray-600 rounded-md flex items-center justify-center">
-                <span className="text-gray-400 text-xs">No Image</span>
-              </div>
-            )}
-          </div>
+    <div className="h-full max-h-[calc(100vh-200px)] overflow-y-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {favorites.map((favorite) => (
+          <div
+            key={favorite.id}
+            className="flex items-center gap-4 p-4 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors cursor-pointer border border-gray-700"
+          >
+            {/* アルバムアート */}
+            <div className="flex-shrink-0">
+              {favorite.song.imageUrl ? (
+                <Image
+                  src={favorite.song.imageUrl}
+                  alt={favorite.song.album || "Album"}
+                  width={64}
+                  height={64}
+                  className="w-16 h-16 rounded-md object-cover"
+                  style={{ objectFit: "cover" }}
+                  unoptimized={true} // 外部画像の場合はtrueに設定
+                />
+              ) : (
+                <div className="w-16 h-16 bg-gray-600 rounded-md flex items-center justify-center">
+                  <span className="text-gray-400 text-xs">No Image</span>
+                </div>
+              )}
+            </div>
 
-          {/* 楽曲情報 */}
-          <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-white truncate">
-              {favorite.song.title}
-            </h3>
-            <p className="text-sm text-gray-400 truncate">
-              {favorite.song.artist}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              追加日: {formatDate(favorite.createdAt)}
-            </p>
-          </div>
+            {/* 楽曲情報 */}
+            <div className="flex-1 min-w-0">
+              <h3 className="font-medium text-white truncate">
+                {favorite.song.title}
+              </h3>
+              <p className="text-sm text-gray-400 truncate">
+                {favorite.song.artist}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                追加日: {formatDate(favorite.createdAt)}
+              </p>
+            </div>
 
-          {/* 再生時間 */}
-          <div className="flex items-center gap-1 text-sm text-gray-400">
-            <Clock size={14} />
-            <span>{formatDuration(favorite.song.duration)}</span>
-          </div>
+            {/* 再生時間 */}
+            <div className="flex items-center gap-1 text-sm text-gray-400">
+              <Clock size={14} />
+              <span>{formatDuration(favorite.song.duration)}</span>
+            </div>
 
-          {/* アクションボタン */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => onTrackSelect?.(favorite.song.spotifyId)}
-              className="p-2 bg-green-600 hover:bg-green-500 rounded-full transition-colors"
-              title="再生"
-            >
-              <Play size={16} fill="white" />
-            </button>
-            <button
-              onClick={() => handleRemoveFavorite(favorite)}
-              className="p-2 bg-red-600 hover:bg-red-500 rounded-full transition-colors"
-              title="お気に入りから削除"
-            >
-              <Heart size={16} fill="white" />
-            </button>
+            {/* アクションボタン */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onTrackSelect?.(favorite.song.spotifyId)}
+                className="p-2 bg-green-600 hover:bg-green-500 rounded-full transition-colors"
+                title="再生"
+              >
+                <Play size={16} fill="white" />
+              </button>
+              <button
+                onClick={() => handleRemoveFavorite(favorite)}
+                className="p-2 bg-red-600 hover:bg-red-500 rounded-full transition-colors"
+                title="お気に入りから削除"
+              >
+                <Heart size={16} fill="white" />
+              </button>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 };

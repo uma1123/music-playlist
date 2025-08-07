@@ -65,57 +65,61 @@ const HistoryList: React.FC<HistoryListProps> = ({ userId, onTrackSelect }) => {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto">
-      {history.map((item) => (
-        <div
-          key={item.id}
-          className="flex items-center gap-4 p-4 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors cursor-pointer border border-gray-700"
-          onClick={() => onTrackSelect?.(item.song.spotifyId)}
-        >
-          <div className="flex-shrink-0">
-            {item.song.imageUrl ? (
-              <Image
-                src={item.song.imageUrl}
-                alt={item.song.title}
-                width={64}
-                height={64}
-                className="w-16 h-16 rounded-md object-cover"
-                unoptimized={true}
-              />
-            ) : (
-              <div className="w-16 h-16 bg-gray-600 rounded-md flex items-center justify-center">
-                <Play className="w-4 h-4 text-gray-400" />
-              </div>
-            )}
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-white truncate">
-              {item.song.title}
-            </h3>
-            <p className="text-sm text-gray-400 truncate">{item.song.artist}</p>
-            <p className="text-xs text-gray-500 mt-1">
-              追加日: {formatDate(item.playedAt)}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-1 text-sm text-gray-400">
-            <Clock size={14} />
-            <span>{formatDuration(item.song.duration)}</span>
-          </div>
-
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onTrackSelect?.(item.song.spotifyId);
-            }}
-            className="p-2 bg-green-600 hover:bg-green-500 rounded-full transition-colors"
-            title="再生"
+    <div className="h-full max-h-[calc(100vh-200px)] overflow-y-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {history.map((item) => (
+          <div
+            key={item.id}
+            className="flex items-center gap-4 p-4 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors cursor-pointer border border-gray-700"
+            onClick={() => onTrackSelect?.(item.song.spotifyId)}
           >
-            <Play size={16} fill="white" />
-          </button>
-        </div>
-      ))}
+            <div className="flex-shrink-0">
+              {item.song.imageUrl ? (
+                <Image
+                  src={item.song.imageUrl}
+                  alt={item.song.title}
+                  width={64}
+                  height={64}
+                  className="w-16 h-16 rounded-md object-cover"
+                  unoptimized={true}
+                />
+              ) : (
+                <div className="w-16 h-16 bg-gray-600 rounded-md flex items-center justify-center">
+                  <Play className="w-4 h-4 text-gray-400" />
+                </div>
+              )}
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <h3 className="font-medium text-white truncate">
+                {item.song.title}
+              </h3>
+              <p className="text-sm text-gray-400 truncate">
+                {item.song.artist}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                追加日: {formatDate(item.playedAt)}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-1 text-sm text-gray-400">
+              <Clock size={14} />
+              <span>{formatDuration(item.song.duration)}</span>
+            </div>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onTrackSelect?.(item.song.spotifyId);
+              }}
+              className="p-2 bg-green-600 hover:bg-green-500 rounded-full transition-colors"
+              title="再生"
+            >
+              <Play size={16} fill="white" />
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
