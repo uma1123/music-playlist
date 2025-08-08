@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import Image from "next/image";
 import {
   Heart,
@@ -46,7 +46,16 @@ const Player: React.FC<PlayerProps> = ({
     [track]
   );
 
-  const { player, deviceId, isReady } = useSpotifyPlayerContext();
+  const {
+    player,
+    deviceId,
+    isReady,
+    currentTrackList,
+    currentTrackIndex,
+    setCurrentTrackList,
+    setCurrentTrackIndex,
+  } = useSpotifyPlayerContext();
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -54,24 +63,67 @@ const Player: React.FC<PlayerProps> = ({
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteMsg, setFavoriteMsg] = useState<string | null>(null);
   const [loadingFavorite, setLoadingFavorite] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
+  // コンテキストとの同期処理を安全に行う
+  const updateContext = useCallback(() => {
+    if (!hasInitialized) {
+      setCurrentTrackList(
+        trackList.map((t) => ({
+          ...t,
+          id: t.uri.split(":")[2], // Extract id from uri if not present
+        }))
+      );
+      setCurrentTrackIndex(currentIndex);
+      setHasInitialized(true);
+    }
+  }, [
+    trackList,
+    currentIndex,
+    setCurrentTrackList,
+    setCurrentTrackIndex,
+    hasInitialized,
+  ]);
+
+  // 初期化処理
   useEffect(() => {
-    setCurrentIndex(initialIndex);
-  }, [initialIndex]);
+    updateContext();
+  }, [updateContext]);
 
-  const [currentTrack, setCurrentTrack] = useState<Track | undefined>(
-    undefined
+  // コンテキストからの同期（一方向のみ）
+  useEffect(() => {
+    if (hasInitialized && currentTrackList.length > 0) {
+      const isSameTrackList =
+        currentTrackList.length === trackList.length &&
+        currentTrackList.every(
+          (track, index) => track.uri === trackList[index]?.uri
+        );
+
+      if (isSameTrackList && currentTrackIndex !== currentIndex) {
+        setCurrentIndex(currentTrackIndex);
+      }
+    }
+  }, [
+    currentTrackIndex,
+    currentTrackList,
+    trackList,
+    currentIndex,
+    hasInitialized,
+  ]);
+
+  const currentTrack = useMemo(
+    () => trackList[currentIndex],
+    [trackList, currentIndex]
   );
 
+  // セッションストレージの更新
   useEffect(() => {
-    setCurrentTrack(trackList[currentIndex]);
-    sessionStorage.setItem("lastTrackIndex", currentIndex.toString());
-
-    return () => {
+    if (hasInitialized) {
       sessionStorage.setItem("lastTrackIndex", currentIndex.toString());
-    };
-  }, [trackList, currentIndex]);
+    }
+  }, [currentIndex, hasInitialized]);
 
+  // プレイヤーの状態監視
   useEffect(() => {
     if (!player) return;
 
@@ -80,10 +132,15 @@ const Player: React.FC<PlayerProps> = ({
         setDuration(state.duration);
         setPosition(state.position);
         setIsPlaying(!state.paused);
-        const uri = state.track_window?.current_track?.uri;
-        const idx = trackList.findIndex((t) => t.uri === uri);
-        if (idx !== -1 && idx !== currentIndex) {
-          setCurrentIndex(idx);
+
+        // URIベースでの同期（無限ループを防ぐため条件を厳しく）
+        const currentUri = state.track_window?.current_track?.uri;
+        if (currentUri && currentTrack && currentUri !== currentTrack.uri) {
+          const newIndex = trackList.findIndex((t) => t.uri === currentUri);
+          if (newIndex !== -1 && newIndex !== currentIndex) {
+            setCurrentIndex(newIndex);
+            setCurrentTrackIndex(newIndex);
+          }
         }
       }
     };
@@ -92,7 +149,7 @@ const Player: React.FC<PlayerProps> = ({
 
     const interval = setInterval(async () => {
       const state = await player.getCurrentState();
-      if (state) {
+      if (state && !state.paused) {
         setPosition(state.position);
       }
     }, 1000);
@@ -101,63 +158,115 @@ const Player: React.FC<PlayerProps> = ({
       player.removeListener("player_state_changed", handleStateChange);
       clearInterval(interval);
     };
-  }, [player, trackList, currentIndex]);
+  }, [player, trackList, currentIndex, currentTrack, setCurrentTrackIndex]);
 
+  // 自動再生処理
   useEffect(() => {
-    if (!deviceId || !isReady || !accessToken || !trackList[currentIndex]?.uri)
+    if (
+      !deviceId ||
+      !isReady ||
+      !accessToken ||
+      !currentTrack?.uri ||
+      !hasInitialized
+    ) {
       return;
+    }
 
     const play = async () => {
-      await fetch("/api/play", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          uris: trackList.map((t) => t.uri),
-          offset: { position: currentIndex },
-          deviceId,
-        }),
-      });
+      try {
+        console.log("Starting playback for track:", currentTrack.name);
 
-      const postPlayHistory = async (currentTrack: Track, userId: string) => {
-        if (!currentTrack || !userId) return;
+        // 現在の再生状態をチェック
+        const currentState = await player?.getCurrentState();
 
-        const trackData = {
-          id: currentTrack.uri.split(":")[2],
-          name: currentTrack.name,
-          artists: currentTrack.artists,
-          album: currentTrack.album,
-          duration_ms: currentTrack.duration_ms,
-          images: currentTrack.album.images,
-        };
-
-        try {
-          await fetch("/api/play-history", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              userId,
-              track: trackData,
-            }),
-          });
-        } catch (error) {
-          console.error("Error posting play history:", error);
+        // 同じ曲が既に再生中の場合は何もしない
+        if (
+          currentState &&
+          currentState.track_window?.current_track?.uri === currentTrack.uri &&
+          currentState.track_window?.current_track?.uri
+        ) {
+          console.log("Same track is already playing, skipping play request");
+          setIsPlaying(!currentState.paused);
+          setPosition(currentState.position);
+          setDuration(currentState.duration);
+          return;
         }
-      };
 
-      const userId = sessionStorage.getItem("userId");
-      if (userId && trackList[currentIndex]) {
-        await postPlayHistory(trackList[currentIndex], userId);
+        const response = await fetch("/api/play", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            uris: trackList.map((t) => t.uri),
+            offset: { position: currentIndex },
+            deviceId,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Play API error:", errorData);
+
+          if (response.status === 401) {
+            console.log("Authentication failed, redirecting to login...");
+            window.location.href = "/api/auth/login";
+            return;
+          }
+
+          throw new Error(`Play API failed: ${response.status}`);
+        }
+
+        console.log("✅ Playback started successfully");
+
+        // 再生履歴の投稿
+        const userId = sessionStorage.getItem("userId");
+        if (userId) {
+          const trackData = {
+            id: currentTrack.uri.split(":")[2],
+            name: currentTrack.name,
+            artists: currentTrack.artists,
+            album: currentTrack.album,
+            duration_ms: currentTrack.duration_ms,
+            images: currentTrack.album.images,
+          };
+
+          try {
+            await fetch("/api/play-history", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                userId,
+                track: trackData,
+              }),
+            });
+          } catch (error) {
+            console.error("Error posting play history:", error);
+          }
+        }
+      } catch (error) {
+        console.error("Error starting playback:", error);
       }
     };
 
-    play();
-  }, [currentIndex, deviceId, isReady, accessToken, trackList]);
+    // 遅延を短縮し、重複実行を防ぐ
+    const timeoutId = setTimeout(play, 500);
 
-  //お気に入り状態をチェック
+    return () => clearTimeout(timeoutId);
+  }, [
+    currentIndex,
+    deviceId,
+    isReady,
+    accessToken,
+    trackList,
+    currentTrack,
+    hasInitialized,
+    player, // playerを依存配列に追加
+  ]);
+
+  // お気に入り状態をチェック
   useEffect(() => {
     const checkFavoriteStatus = async () => {
       if (!currentTrack) return;
@@ -169,18 +278,14 @@ const Player: React.FC<PlayerProps> = ({
         const response = await fetch(`/api/favorite?userId=${userId}`);
         if (response.ok) {
           const data = await response.json();
-          console.log("Favorite status check response:", data); // デバッグ用
-
           const trackId = currentTrack.uri.split(":")[2];
 
-          // データ構造を安全にチェック
           let favorites = [];
           if (data && Array.isArray(data.favorites)) {
             favorites = data.favorites;
           } else if (data && Array.isArray(data)) {
             favorites = data;
           } else {
-            console.warn("Unexpected favorites data structure:", data);
             setIsFavorite(false);
             return;
           }
@@ -191,7 +296,6 @@ const Player: React.FC<PlayerProps> = ({
           );
           setIsFavorite(isInFavorites);
         } else {
-          console.error("Failed to fetch favorites:", response.status);
           setIsFavorite(false);
         }
       } catch (error) {
@@ -240,14 +344,12 @@ const Player: React.FC<PlayerProps> = ({
       if (response.ok) {
         const result = await response.json();
 
-        // レスポンスの成功フラグをチェック
         if (result.success || result.success !== false) {
           setIsFavorite(!isFavorite);
           setFavoriteMsg(
             isFavorite ? "お気に入りを解除しました" : "お気に入りに追加しました"
           );
         } else {
-          // 既にお気に入りに追加されている場合
           if (result.message === "Already in favorites") {
             setIsFavorite(true);
             setFavoriteMsg("既にお気に入りに追加されています");
@@ -256,8 +358,6 @@ const Player: React.FC<PlayerProps> = ({
           }
         }
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        console.error("Favorite API error:", errorData);
         setFavoriteMsg("エラーが発生しました");
       }
     } catch (error) {
@@ -269,19 +369,122 @@ const Player: React.FC<PlayerProps> = ({
     setLoadingFavorite(false);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentIndex < trackList.length - 1) {
-      setCurrentIndex(currentIndex + 1);
+      const newIndex = currentIndex + 1;
+      setCurrentIndex(newIndex);
+      setCurrentTrackIndex(newIndex);
+
+      // 新しい曲を再生
+      try {
+        const response = await fetch("/api/play", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            uris: trackList.map((t) => t.uri),
+            offset: { position: newIndex },
+            deviceId,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Play API failed: ${response.status}`);
+        }
+
+        // 再生履歴の投稿
+        const userId = sessionStorage.getItem("userId");
+        if (userId) {
+          const track = trackList[newIndex];
+          const trackData = {
+            id: track.uri.split(":")[2],
+            name: track.name,
+            artists: track.artists,
+            album: track.album,
+            duration_ms: track.duration_ms,
+            images: track.album.images,
+          };
+
+          try {
+            await fetch("/api/play-history", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                userId,
+                track: trackData,
+              }),
+            });
+          } catch (error) {
+            console.error("Error posting play history:", error);
+          }
+        }
+      } catch (error) {
+        console.error("Error playing next track:", error);
+      }
     }
   };
 
-  const handlePrev = () => {
+  const handlePrev = async () => {
     if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
+      const newIndex = currentIndex - 1;
+      setCurrentIndex(newIndex);
+      setCurrentTrackIndex(newIndex);
+
+      // 新しい曲を再生
+      try {
+        const response = await fetch("/api/play", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            uris: trackList.map((t) => t.uri),
+            offset: { position: newIndex },
+            deviceId,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Play API failed: ${response.status}`);
+        }
+
+        // 再生履歴の投稿
+        const userId = sessionStorage.getItem("userId");
+        if (userId) {
+          const track = trackList[newIndex];
+          const trackData = {
+            id: track.uri.split(":")[2],
+            name: track.name,
+            artists: track.artists,
+            album: track.album,
+            duration_ms: track.duration_ms,
+            images: track.album.images,
+          };
+
+          try {
+            await fetch("/api/play-history", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                userId,
+                track: trackData,
+              }),
+            });
+          } catch (error) {
+            console.error("Error posting play history:", error);
+          }
+        }
+      } catch (error) {
+        console.error("Error playing previous track:", error);
+      }
     }
   };
 
-  // currentTrackが未定義の場合は何も描画しない
   if (!currentTrack || !currentTrack.album) return null;
 
   return (
@@ -290,13 +493,12 @@ const Player: React.FC<PlayerProps> = ({
       style={{
         backgroundImage: `url(${currentTrack.album.images[0]?.url})`,
         backgroundSize: "cover",
+        backgroundRepeat: "no-repeat",
         backgroundPosition: "center",
       }}
     >
-      {/* オーバーレイ */}
       <div className="absolute inset-0 bg-black/80 backdrop-blur-2xl z-0" />
 
-      {/* メインUI */}
       <div className="relative z-10 flex flex-col items-center justify-center w-full h-full max-h-screen p-4 overflow-hidden">
         {favoriteMsg && (
           <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 bg-red-300 text-black font-semibold text-base px-6 py-3 rounded-lg shadow-lg border-red-500 transition-all animate-fade-in">
@@ -304,7 +506,6 @@ const Player: React.FC<PlayerProps> = ({
           </div>
         )}
 
-        {/* お気に入りボタン - 右上に固定 */}
         <div className="absolute top-8 right-8 z-20">
           <button
             className={`flex items-center justify-center w-12 h-12 rounded-full shadow-lg ${
@@ -327,7 +528,6 @@ const Player: React.FC<PlayerProps> = ({
         </div>
 
         <div className="flex flex-col items-center w-full max-w-lg">
-          {/* ジャケット画像 */}
           <div className="relative w-80 h-80 rounded-2xl overflow-hidden shadow-2xl mb-8">
             <Image
               src={currentTrack.album.images[0]?.url}
@@ -338,7 +538,6 @@ const Player: React.FC<PlayerProps> = ({
             />
           </div>
 
-          {/* 曲情報 */}
           <div className="text-center mb-8 px-4">
             <h2 className="text-xl sm:text-3xl font-bold text-white mb-2">
               {currentTrack.name}
@@ -348,7 +547,6 @@ const Player: React.FC<PlayerProps> = ({
             </p>
           </div>
 
-          {/* シークバー */}
           <div className="w-full max-w-md mb-6">
             <input
               type="range"
@@ -377,7 +575,6 @@ const Player: React.FC<PlayerProps> = ({
             </div>
           </div>
 
-          {/* プレイヤーコントロール */}
           <div className="flex items-center justify-center gap-8">
             <button
               className="text-white/70 hover:text-white transition-colors disabled:opacity-30"
