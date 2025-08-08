@@ -1,17 +1,17 @@
 export interface Artist {
-  id: string;
+  id?: string;
   name: string;
-  uri: string;
+  uri?: string;
 }
 
 export interface Album {
-  id: string;
+  id?: string;
   name: string;
-  uri: string;
+  uri?: string;
   images: Array<{
     url: string;
-    height: number;
-    width: number;
+    height?: number;
+    width?: number;
   }>;
 }
 
@@ -30,6 +30,26 @@ export interface SearchResult {
     total: number;
   };
   error?: string;
+}
+
+// SpotifyPlayerProvider用の型定義を追加
+export interface SpotifyPlayerContextProps {
+  player: Spotify.Player | null;
+  deviceId: string | null;
+  isReady: boolean;
+  currentTrackList: Track[];
+  currentTrackIndex: number;
+  setCurrentTrackList: (tracks: Track[]) => void;
+  setCurrentTrackIndex: (index: number) => void;
+  isPlayerVisible: boolean;
+  setIsPlayerVisible: (visible: boolean) => void;
+  lastSearchQuery: string | null;
+  setLastSearchQuery: (query: string | null) => void;
+}
+
+export interface SpotifyPlayerProviderProps {
+  accessToken: string;
+  children: React.ReactNode;
 }
 
 export interface PlayHistory {
