@@ -5,18 +5,26 @@ import { Track, SearchResult } from "../../../types/spotify";
 import TrackList from "../../../components/TrackList";
 import SearchBar from "@/components/SearchBar";
 import { Header } from "@/components/Header";
+import { useSpotifyPlayerContext } from "@/context/SpotifyPlayerProvider";
 
 export default function SearchResultPage() {
-  //urlパラメータから検索クエリを取得
   const params = useParams<{ query: string }>();
   const query = params?.query ?? "";
-  //検索結果や状態管理用のstate
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const router = useRouter();
+  const { setCurrentTrackList, setCurrentTrackIndex, setLastSearchQuery } =
+    useSpotifyPlayerContext();
+
+  // 検索クエリを保存
+  useEffect(() => {
+    if (query) {
+      setLastSearchQuery(decodeURIComponent(query));
+    }
+  }, [query, setLastSearchQuery]);
 
   //クエリが変わったらリセット
   useEffect(() => {
@@ -64,15 +72,18 @@ export default function SearchResultPage() {
 
   //曲がクリックされた詳細ページへ遷移
   const handleTrackSelect = (track: Track) => {
-    // 曲リスト全体とクリックした曲のindexを保存
+    // プレイヤーコンテキストに曲リストとインデックスを設定
+    const trackIndex = tracks.findIndex((t) => t.id === track.id);
+    setCurrentTrackList(tracks);
+    setCurrentTrackIndex(trackIndex);
+
+    // セッションストレージにも保存（後方互換性のため）
     sessionStorage.setItem(
       "lastTrackIds",
       JSON.stringify(tracks.map((t) => t.id))
     );
-    sessionStorage.setItem(
-      "lastTrackIndex",
-      tracks.findIndex((t) => t.id === track.id).toString()
-    );
+    sessionStorage.setItem("lastTrackIndex", trackIndex.toString());
+
     router.push(`/track/${track.id}`);
   };
 
@@ -88,11 +99,11 @@ export default function SearchResultPage() {
         </div>
       </div>
 
-      {/* 検索結果：高さを明示してスクロール可能に */}
+      {/* 検索結果：ミニプレイヤー分の余白を追加 */}
       <div className="flex-1 overflow-hidden">
-        <div className="overflow-y-auto h-[calc(100vh-128px)] px-4 py-6 container max-w-6xl mx-auto">
+        <div className="overflow-y-auto h-[calc(100vh-128px)] px-4 py-6 pb-32 container max-w-6xl mx-auto">
           <h1 className="text-2xl font-bold mb-6 text-white">
-            「{query}」の検索結果
+            「{decodeURIComponent(query)}」の検索結果
           </h1>
 
           {loading && tracks.length === 0 && (
@@ -106,7 +117,7 @@ export default function SearchResultPage() {
             <>
               <TrackList tracks={tracks} onTrackSelect={handleTrackSelect} />
               {hasMore && (
-                <div className="flex justify-center mt-6">
+                <div className="flex justify-center mt-6 mb-8">
                   <button
                     onClick={() => fetchTracks(offset)}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full shadow transition-colors duration-300"
