@@ -30,11 +30,8 @@ const TrackList: React.FC<TrackListProps> = ({ tracks, onTrackSelect }) => {
   };
 
   return (
-    // 親Cardに「max-h-screen overflow-y-auto」を追加
-    <div className="mb-6">
+    <div className="mb-8">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-        {" "}
-        {/* gapを少し広げる */}
         {tracks.map((track, idx) => (
           <div key={`${track.id}-${idx}`} className="group cursor-pointer">
             <div
