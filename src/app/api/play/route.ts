@@ -14,8 +14,16 @@ export async function POST(req: NextRequest) {
 
     const { uris, offset, deviceId } = await req.json();
 
+    if (!uris || !Array.isArray(uris) || uris.length === 0) {
+      return NextResponse.json(
+        { error: "Valid uris array is required" },
+        { status: 400 }
+      );
+    }
+
     const cookieStore = await cookies();
-    const access_token = cookieStore.get("access_token")?.value;
+    let access_token = cookieStore.get("access_token")?.value;
+    const refresh_token = cookieStore.get("refresh_token")?.value;
 
     if (!access_token) {
       return NextResponse.json({ error: "No access token" }, { status: 401 });
@@ -31,7 +39,7 @@ export async function POST(req: NextRequest) {
       body.offset = offset;
     }
 
-    const res = await fetch(url, {
+    let res = await fetch(url, {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${access_token}`,
@@ -40,6 +48,53 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify(body),
     });
 
+    // アクセストークンが無効な場合はリフレッシュを試行
+    if (res.status === 401 && refresh_token) {
+      console.log("Access token expired, refreshing...");
+
+      const tokenRes = await fetch("https://accounts.spotify.com/api/token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Authorization:
+            "Basic " +
+            Buffer.from(
+              process.env.SPOTIFY_CLIENT_ID +
+                ":" +
+                process.env.SPOTIFY_CLIENT_SECRET
+            ).toString("base64"),
+        },
+        body: new URLSearchParams({
+          grant_type: "refresh_token",
+          refresh_token,
+        }),
+      });
+
+      if (tokenRes.ok) {
+        const tokenBody = await tokenRes.json();
+        access_token = tokenBody.access_token;
+
+        // 新しいトークンでクッキーを更新
+        const response = NextResponse.next();
+        response.cookies.set("access_token", access_token ?? "", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+        });
+
+        // 再度リクエストを試行
+        res = await fetch(url, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
+        });
+      }
+    }
+
     if (!res.ok) {
       let errorDetail = {};
       try {
@@ -47,9 +102,13 @@ export async function POST(req: NextRequest) {
       } catch {
         console.error("Failed to parse error response from Spotify");
       }
-      console.error("Spotify Play Error:", errorDetail);
+      console.error("Spotify Play Error:", res.status, errorDetail);
       return NextResponse.json(
-        { error: "Failed to start playback", detail: errorDetail },
+        {
+          error: "Failed to start playback",
+          detail: errorDetail,
+          status: res.status,
+        },
         { status: 500 }
       );
     }
